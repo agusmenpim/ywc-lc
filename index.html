@@ -3,918 +3,1314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YESWECAN LMS</title>
+    <title>YWC LMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        html, body {
-            margin: 0 !important; padding: 0 !important; overflow: hidden !important; 
-            width: 100vw !important; height: 100vh !important; background-color: #f8fafc !important;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
-        #lms-app-container {
-            position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-            width: 100vw !important; height: 100vh !important; z-index: 999999999 !important;
-            background-color: #f8fafc; overflow-y: auto !important; font-family: 'Inter', sans-serif;
-        }
-
-        .glass-nav { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(229, 231, 235, 0.5); }
+        /* Menyembunyikan elemen bawaan Blogger agar Full Page */
+        .blogger-element, #navbar-iframe, .Navbar, .date-header, .post-title, .post-footer, .comments, .sidebar, .footer { display: none !important; }
+        .post-body { margin: 0 !important; padding: 0 !important; }
         
-        .video-container {
-            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #0f172a; border-radius: 1rem;
-            transition: all 0.3s ease; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-        }
-        
-        .video-container.pdf-mode { padding-bottom: 0 !important; height: 85vh !important; background: #fff; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 1rem; }
-        .vid-protector-top { position: absolute; top: 0; left: 0; width: 100%; height: 70px; z-index: 50; background: transparent; }
-
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-        .animate-float { animation: float 4s ease-in-out infinite; }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
+        /* UI Utilities */
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .glass-dark { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Layout Responsif */
+        @media (max-width: 768px) {
+            .admin-sidebar { display: none; }
+            .admin-bottom-nav { display: flex; }
+            .admin-main { padding-bottom: 80px; }
+        }
+        @media (min-width: 769px) {
+            .admin-bottom-nav { display: none; }
+            .admin-main { margin-left: 16rem; }
+        }
+        
+        /* Loader */
+        .loader { border: 4px solid #e2e8f0; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-50">
-<div style="display:none;"><img src="https://placehold.co/1200x630/4f46e5/ffffff?text=YESWECAN+LMS" alt="Thumbnail LMS"></div>
+<body>
+    <div id="app" class="min-h-screen flex flex-col w-full absolute top-0 left-0 bg-[#f8fafc] z-[999]"></div>
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+    <div id="modal-container"></div>
 
-<div id="lms-app-container">
-    <!-- Navbar -->
-    <nav class="glass-nav sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-[72px]">
-                <div class="flex items-center cursor-pointer group" onclick="showPage('landing')">
-                    <img id="platformLogo" src="" alt="Logo" class="h-10 w-auto mr-3 hidden group-hover:scale-105 transition-transform">
-                    <span id="platformName" class="font-extrabold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-blue-600 tracking-tight">YESWECAN LMS</span>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div id="nav-user-info" class="hidden text-sm text-gray-700 font-bold uppercase tracking-wider bg-gray-100 px-4 py-2 rounded-full border border-gray-200 shadow-sm"></div>
-                    <button id="btn-login" onclick="showPage('login')" class="bg-indigo-50 text-indigo-700 px-6 py-2.5 rounded-full font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-sm">Login</button>
-                    <button id="btn-logout" onclick="logout()" class="hidden bg-red-50 text-red-600 px-5 py-2.5 rounded-full font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm">Logout</button>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <div id="page-landing" class="page-section fade-in">
-        <div class="bg-gradient-to-br from-indigo-900 via-blue-900 to-indigo-800 text-white py-28 px-4 text-center relative overflow-hidden">
-            <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-            <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
-            <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float" style="animation-delay: 2s;"></div>
+        // ==========================================
+        // 1. KONFIGURASI APLIKASI
+        // ==========================================
+        const IS_PREVIEW = false; // UBAH INI JADI false SAAT DEPLOY
+        
+        const firebaseConfig = {
+  apiKey: "AIzaSyD1ZNKPytA4ykItiwdey0Mp4PnfXxouvWE",
+  authDomain: "ywc-lc.firebaseapp.com",
+  projectId: "ywc-lc",
+  storageBucket: "ywc-lc.firebasestorage.app",
+  messagingSenderId: "925032565196",
+  appId: "1:925032565196:web:57f1d3a27096d2da00b569"
+        };
+
+        let app, auth, db;
+        if (!IS_PREVIEW) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            } catch (e) {
+                console.error("Firebase init error", e);
+            }
+        }
+
+        // ==========================================
+        // 2. STATE MANAGER & HELPER
+        // ==========================================
+        const state = {
+            user: null, // role: 'admin' atau 'student'
+            settings: {
+                nama_platform: "YWC LMS",
+                founder_nama: "A. Permana, A.Md., S.H.",
+                founder_jabatan: "Founder Yeswecan Tech",
+                founder_pesan: "Saya percaya setiap orang berhak mendapat akses ilmu yang bermutu...",
+                logo_url: "",
+                founder_foto: ""
+            },
+            loginRole: 'student'
+        };
+
+        const appEl = document.getElementById('app');
+
+        const showToast = (msg, type = 'success') => {
+            const t = document.createElement('div');
+            t.className = `px-6 py-3 rounded-xl shadow-2xl fade-in text-white font-bold text-sm flex items-center gap-3 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            t.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} text-lg"></i> ${msg}`;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        };
+
+        const generateRandomPassword = (length = 8) => {
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&";
+            let retVal = "";
+            for (let i = 0, n = charset.length; i < length; ++i) {
+                retVal += charset.charAt(Math.floor(Math.random() * n));
+            }
+            return retVal;
+        };
+
+        // Helper untuk Google Drive Image & Video
+        const getGDriveThumbnail = (url) => {
+            if(!url) return '';
+            const match = url.match(/[-\w]{25,}/);
+            return match ? `https://drive.google.com/thumbnail?id=${match[0]}&sz=w800` : url;
+        };
+        const getGDriveEmbed = (url) => {
+            if(!url) return '';
+            const match = url.match(/[-\w]{25,}/);
+            return match ? `https://drive.google.com/file/d/${match[0]}/preview` : url;
+        };
+        const imageFallback = "onerror=\"this.onerror=null;this.src='https://placehold.co/800x400/e2e8f0/475569?text=Image';\"";
+        const avatarFallback = "onerror=\"this.onerror=null;this.src='https://placehold.co/200x200/e2e8f0/475569?text=User';\"";
+
+        // ==========================================
+        // 3. AUTO SETUP DATABASE DUMMY
+        // ==========================================
+        const autoSetupDatabase = async () => {
+            if(IS_PREVIEW) return;
+            try {
+                const sSnap = await getDoc(doc(db, "settings", "platform_config"));
+                if(!sSnap.exists()) {
+                    showToast("Menyiapkan database awal...", "success");
+                    // 1. Settings
+                    await setDoc(doc(db, "settings", "platform_config"), state.settings);
+                    
+                    // 2. Course Dummy
+                    const cRef = doc(collection(db, "courses"));
+                    await setDoc(cRef, { id: cRef.id, judul: "Kursus Demo", deskripsi: "Ini kursus pertama Anda.", thumbnail_url: "", jumlah_siswa: 1 });
+                    
+                    // 3. Module Dummy
+                    const mRef = doc(collection(db, "modules"));
+                    await setDoc(mRef, { id: mRef.id, course_id: cRef.id, urutan: 1, judul_modul: "Video Pembukaan", tipe: "video", konten_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" });
+                    
+                    // 4. Student Dummy
+                    const uRef = doc(collection(db, "users"));
+                    await setDoc(uRef, { id: uRef.id, nama: "Siswa Demo", email: "siswa@ywc.com", password: "password123", role: "student" });
+                    
+                    // 5. Enrollment Dummy
+                    const eRef = doc(collection(db, "enrollments"));
+                    await setDoc(eRef, { id: eRef.id, user_id: uRef.id, course_id: cRef.id, progress_percent: 0 });
+                    
+                    showToast("Setup selesai! Silakan refresh halaman.");
+                } else {
+                    state.settings = sSnap.data();
+                }
+            } catch(e) { console.error("Setup error", e); }
+        };
+
+        // ==========================================
+        // 4. RENDERER HALAMAN PUBLIK & LOGIN
+        // ==========================================
+        window.renderLanding = async () => {
+            appEl.innerHTML = `<div class="flex items-center justify-center h-screen"><div class="loader"></div></div>`;
             
-            <div class="relative z-10 max-w-4xl mx-auto">
-                <span class="inline-block py-1 px-3 rounded-full bg-indigo-800 border border-indigo-600 text-indigo-200 text-sm font-bold tracking-widest mb-6 shadow-inner">PLATFORM PEMBELAJARAN DIGITAL</span>
-                <h1 class="text-5xl md:text-7xl font-extrabold mb-8 tracking-tight leading-tight drop-shadow-lg">Tingkatkan Keahlian Anda Bersama Kami</h1>
-                <p class="text-xl md:text-2xl font-light mb-12 text-indigo-100 leading-relaxed">Akses materi eksklusif terstruktur dan dapatkan sertifikasi profesional langsung dari ahlinya.</p>
-                <button onclick="document.getElementById('katalog').scrollIntoView({behavior: 'smooth'})" class="bg-white text-indigo-900 font-extrabold py-4 px-10 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.5)] hover:scale-105 transition-all text-lg flex items-center justify-center mx-auto group">
-                    Lihat Katalog Kursus <i class="fas fa-arrow-down ml-3 text-indigo-500 group-hover:translate-y-1 transition-transform"></i>
-                </button>
-            </div>
-        </div>
+            let courses = [];
+            if(!IS_PREVIEW) {
+                try {
+                    const snap = await getDocs(collection(db, "courses"));
+                    courses = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                } catch(e) {}
+            } else {
+                courses = [
+                    {id: '1', judul: 'Membuat Website dengan AI', deskripsi: 'Belajar membuat web dengan AI cepat dan praktis.', thumbnail_url: '', jumlah_siswa: 15},
+                    {id: '2', judul: 'Canva Mobile - 100% Praktik', deskripsi: 'Belajar desain langsung dari HP tanpa ribet.', thumbnail_url: '', jumlah_siswa: 30}
+                ];
+            }
 
-        <div id="founder-section" class="hidden bg-white py-24 border-b border-gray-100 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2"></div>
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div class="flex flex-col items-center text-center">
-                    <h2 class="text-sm font-extrabold text-indigo-600 tracking-widest uppercase mb-12 border-b-2 border-indigo-600 pb-2">Sambutan Founder</h2>
-                    <div class="w-40 h-40 md:w-48 md:h-48 mb-8 flex-shrink-0 relative group">
-                        <div class="absolute inset-0 bg-indigo-600 rounded-full blur opacity-20 transform scale-110 translate-y-2 group-hover:scale-125 transition-transform duration-500"></div>
-                        <img id="founder-photo" src="" alt="Founder" class="relative w-full h-full object-cover rounded-full border-4 border-white shadow-xl group-hover:border-indigo-50 transition-colors" onerror="this.onerror=null; this.src='https://placehold.co/400x400/e2e8f0/64748b?text=Foto';">
-                    </div>
-                    <div class="relative max-w-3xl mb-8">
-                        <i class="fas fa-quote-left text-5xl text-indigo-100 absolute -top-6 -left-8 -z-10 transform -rotate-6"></i>
-                        <p id="founder-message" class="text-gray-600 text-lg md:text-xl leading-relaxed italic relative z-10 font-medium"></p>
-                        <i class="fas fa-quote-right text-5xl text-indigo-100 absolute -bottom-6 -right-8 -z-10 transform rotate-6"></i>
-                    </div>
-                    <div>
-                        <h3 id="founder-name" class="text-2xl md:text-3xl text-gray-900 font-extrabold tracking-tight"></h3>
-                        <p id="founder-title" class="text-sm md:text-base text-indigo-600 font-bold mt-1 tracking-wide"></p>
+            let courseHtml = courses.map(c => `
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition duration-300">
+                    <img src="${getGDriveThumbnail(c.thumbnail_url)}" ${imageFallback} class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <div class="text-xs font-bold text-indigo-600 mb-2 bg-indigo-50 inline-block px-3 py-1 rounded-full"><i class="fas fa-users"></i> ${c.jumlah_siswa || 0} Siswa</div>
+                        <h4 class="font-bold text-xl mb-3 text-gray-800 leading-tight">${c.judul}</h4>
+                        <p class="text-sm text-gray-600 mb-5 line-clamp-2">${c.deskripsi}</p>
+                        <button onclick="renderLogin()" class="w-full bg-gray-50 text-indigo-700 py-3 rounded-xl font-bold hover:bg-gray-100 transition">Lihat Detail</button>
                     </div>
                 </div>
-            </div>
-        </div>
+            `).join('');
 
-        <div id="katalog" class="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
-            <div class="text-left mb-12 flex items-center justify-between border-b border-gray-200 pb-6">
-                <div>
-                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Katalog Kursus</h2>
-                    <p class="text-gray-500 mt-2 font-medium">Pilih program yang sesuai dengan tujuan karir Anda.</p>
-                </div>
-            </div>
-            <div id="public-courses-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10"></div>
-        </div>
-    </div>
+            const s = state.settings;
 
-    <div id="page-course-detail" class="page-section hidden fade-in">
-        <div class="max-w-4xl mx-auto py-12 px-4">
-            <button onclick="showPage('landing')" class="mb-8 text-gray-600 hover:text-gray-900 font-bold flex items-center bg-white px-5 py-2.5 rounded-full shadow-sm border border-gray-200 transition-all hover:shadow-md"><i class="fas fa-arrow-left mr-2"></i> Kembali ke Katalog</button>
-            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-                <div class="h-96 relative w-full bg-gray-900">
-                    <img id="detail-course-thumb" src="" alt="Thumbnail" class="w-full h-full object-cover opacity-50">
-                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
-                    <div class="absolute bottom-10 left-10 right-10 text-white">
-                        <span id="detail-course-students" class="inline-flex items-center bg-indigo-600 text-xs font-extrabold tracking-wider px-4 py-2 rounded-full mb-5 shadow-lg border border-indigo-500"></span>
-                        <h1 id="detail-course-title" class="text-4xl md:text-5xl font-extrabold leading-tight drop-shadow-xl tracking-tight">Judul Kursus</h1>
-                    </div>
-                </div>
-                <div class="p-10 md:p-14">
-                    <div class="prose max-w-none mb-12">
-                        <h3 class="text-2xl font-extrabold text-gray-900 mb-5 tracking-tight">Tentang Kursus Ini</h3>
-                        <p id="detail-course-desc" class="text-gray-600 leading-relaxed text-lg whitespace-pre-wrap font-medium"></p>
-                    </div>
-                    
-                    <h3 class="text-2xl font-extrabold text-gray-900 mb-6 flex items-center tracking-tight"><i class="fas fa-list-ul mr-4 text-indigo-500 bg-indigo-50 p-2 rounded-lg"></i> Silabus / Materi Pembelajaran</h3>
-                    <div id="detail-course-syllabus" class="bg-gray-50 rounded-2xl border border-gray-200 p-8 space-y-4 mb-12 shadow-inner"></div>
-                    
-                    <div class="bg-gradient-to-br from-indigo-50 via-blue-50 to-white rounded-3xl p-10 text-center border border-indigo-100 shadow-lg relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-bl-full opacity-50 -z-10"></div>
-                        <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md rotate-3 transform">
-                            <i class="fas fa-lock text-3xl text-indigo-500 -rotate-3"></i>
+            appEl.innerHTML = `
+                <nav class="glass fixed w-full top-0 z-50 border-b">
+                    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            ${s.logo_url ? `<img src="${getGDriveThumbnail(s.logo_url)}" class="h-8" ${imageFallback}>` : '<div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl">Y</div>'}
+                            <span class="font-extrabold text-2xl text-gray-800 tracking-tight">${s.nama_platform || 'LMS'}</span>
                         </div>
-                        <h4 class="text-2xl font-extrabold text-gray-900 mb-3 tracking-tight">Tertarik mengikuti kursus ini?</h4>
-                        <p class="text-gray-600 mb-8 max-w-lg mx-auto font-medium">Silakan login jika Anda sudah memiliki akses, atau daftar sekarang untuk mendapatkan akses masuk.</p>
-                        <div class="flex justify-center items-center gap-4 flex-wrap">
-                            <button onclick="showPage('login')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3.5 px-10 rounded-full shadow-[0_10px_20px_rgba(79,70,229,0.3)] transition-transform transform hover:-translate-y-1 text-lg">Login Member</button>
-                            <a id="btn-register-external" href="#" target="_blank" class="hidden bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold py-3.5 px-10 rounded-full shadow-[0_10px_20px_rgba(16,185,129,0.3)] transition-transform transform hover:-translate-y-1 text-lg flex items-center"><i class="fas fa-rocket mr-2"></i> Daftar Sekarang</a>
-                        </div>
+                        <button onclick="renderLogin()" class="bg-indigo-600 text-white px-8 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">Login</button>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="page-login" class="page-section hidden fade-in flex items-center justify-center min-h-screen px-4 bg-gray-50">
-        <div class="bg-white p-10 md:p-12 rounded-[2rem] shadow-2xl w-full max-w-md border border-gray-100 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600"></div>
-            <button onclick="showPage('landing')" class="absolute top-6 left-6 text-gray-400 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
-            <div class="text-center mb-10 mt-4">
-                <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-indigo-50 text-indigo-600 mb-6 shadow-inner border-4 border-white outline outline-indigo-50"><i class="fas fa-fingerprint text-5xl"></i></div>
-                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Selamat Datang</h2>
-                <p class="text-gray-500 text-sm mt-2 font-medium">Masuk untuk mengakses ruang belajar Anda.</p>
-            </div>
-            <form onsubmit="handleLogin(event)">
-                <div class="mb-5"><label class="block text-gray-700 text-sm font-bold mb-2 ml-1">Email / Username</label><input type="text" id="email" required class="w-full px-5 py-4 rounded-2xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50 font-medium"></div>
-                <div class="mb-8"><label class="block text-gray-700 text-sm font-bold mb-2 ml-1">Password</label><input type="password" id="password" required class="w-full px-5 py-4 rounded-2xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50 font-medium"></div>
-                <button type="submit" id="login-btn-submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-4 px-4 rounded-2xl shadow-[0_10px_20px_rgba(79,70,229,0.3)] transition-all transform hover:-translate-y-1 text-lg">Masuk ke Dashboard</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="page-admin" class="page-section hidden fade-in">
-        <div class="flex h-[calc(100vh-72px)] overflow-hidden">
-            <div class="w-72 bg-gray-900 text-gray-300 flex flex-col shadow-2xl z-10 border-r border-gray-800">
-                <div class="p-8 border-b border-gray-800 flex items-center">
-                    <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center mr-4 shadow-lg"><i class="fas fa-shield-alt text-white text-xl"></i></div>
-                    <h2 class="text-xl font-extrabold text-white tracking-widest uppercase">Admin Panel</h2>
-                </div>
-                <nav class="flex-1 p-6 space-y-3 overflow-y-auto custom-scrollbar">
-                    <button onclick="switchAdminTab('users')" id="btn-tab-users" class="w-full text-left px-5 py-4 rounded-2xl bg-indigo-600 text-white transition-all flex items-center font-bold shadow-lg transform hover:scale-105"><i class="fas fa-users w-8 text-lg"></i> Kelola Siswa</button>
-                    <button onclick="switchAdminTab('courses')" id="btn-tab-courses" class="w-full text-left px-5 py-4 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all flex items-center font-bold hover:shadow-md"><i class="fas fa-book w-8 text-lg"></i> Kelola Kursus</button>
-                    <button onclick="switchAdminTab('enrollments')" id="btn-tab-enrollments" class="w-full text-left px-5 py-4 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all flex items-center font-bold hover:shadow-md"><i class="fas fa-key w-8 text-lg"></i> Akses Kursus</button>
-                    <button onclick="switchAdminTab('settings')" id="btn-tab-settings" class="w-full text-left px-5 py-4 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all flex items-center font-bold hover:shadow-md"><i class="fas fa-cog w-8 text-lg"></i> Pengaturan</button>
                 </nav>
-            </div>
-            
-            <div class="flex-1 bg-gray-50 p-10 overflow-y-auto custom-scrollbar" id="admin-content">
                 
-                <div id="tab-users" class="admin-tab fade-in">
-                    <div class="mb-10"><h2 class="text-4xl font-extrabold text-gray-900 tracking-tight">Kelola Siswa</h2></div>
-                    <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 mb-10">
-                        <h3 class="text-xl font-extrabold text-gray-800 mb-6 flex items-center tracking-tight"><i class="fas fa-user-plus text-indigo-500 bg-indigo-50 p-3 rounded-xl mr-4"></i> Daftarkan Siswa Baru</h3>
-                        <form onsubmit="adminAddUser(event)" class="flex flex-col md:flex-row gap-5">
-                            <div class="flex-1">
-                                <input type="text" id="new-user-name" placeholder="Nama Lengkap" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-gray-50 font-medium">
-                            </div>
-                            <div class="flex-1">
-                                <input type="email" id="new-user-email" placeholder="Email (Username)" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-gray-50 font-medium">
-                                <p class="text-xs text-gray-500 mt-2 ml-1"><i class="fas fa-info-circle"></i> Password di-generate otomatis ke email siswa.</p>
-                            </div>
-                            <button type="submit" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-extrabold hover:bg-indigo-700 shadow-lg whitespace-nowrap transform hover:-translate-y-1 transition-all h-[56px]">Daftarkan</button>
-                        </form>
+                <header class="pt-40 pb-24 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-indigo-600 text-white text-center px-4 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/90 to-blue-800/90"></div>
+                    <div class="max-w-4xl mx-auto relative z-10">
+                        <span class="px-5 py-1.5 rounded-full bg-white/10 text-xs font-bold tracking-widest uppercase backdrop-blur-md mb-8 inline-block border border-white/20">Platform Pembelajaran Digital</span>
+                        <h1 class="text-4xl md:text-6xl font-black mb-6 leading-tight tracking-tight">Tingkatkan Keahlian Anda Bersama Kami</h1>
+                        <p class="text-lg md:text-xl text-indigo-100 mb-10 max-w-2xl mx-auto">Akses materi eksklusif terstruktur dan dapatkan sertifikasi profesional langsung dari ahlinya.</p>
+                        <a href="#courses" class="bg-white text-indigo-900 px-10 py-4 rounded-full font-bold shadow-2xl hover:bg-gray-50 transition inline-block text-lg">Lihat Katalog Kursus <i class="fas fa-arrow-down ml-2"></i></a>
                     </div>
-                    <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                        <table class="w-full text-left border-collapse">
-                            <thead><tr class="bg-gray-50 text-gray-400 text-xs uppercase tracking-widest font-extrabold"><th class="p-6 border-b">Nama</th><th class="p-6 border-b">Email</th><th class="p-6 border-b">Role</th></tr></thead>
-                            <tbody id="admin-user-list" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </div>
+                </header>
 
-                <div id="tab-courses" class="admin-tab hidden fade-in">
-                    <div class="flex justify-between items-center mb-10">
-                        <h2 class="text-4xl font-extrabold text-gray-900 tracking-tight">Kelola Kursus</h2>
-                        <button onclick="openCourseModal()" class="bg-indigo-600 text-white px-8 py-3.5 rounded-full font-extrabold hover:bg-indigo-700 shadow-lg flex items-center transform hover:-translate-y-1 transition-all"><i class="fas fa-plus mr-3"></i> Tambah Kursus</button>
+                <section class="py-20 bg-white px-4 relative">
+                    <div class="max-w-4xl mx-auto text-center relative z-10">
+                        <h3 class="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-10 border-b-2 border-indigo-100 inline-block pb-3">Sambutan Founder</h3>
+                        <img src="${getGDriveThumbnail(s.founder_foto)}" ${avatarFallback} class="w-40 h-40 rounded-full mx-auto object-cover border-8 border-indigo-50 shadow-2xl mb-8">
+                        <p class="text-xl md:text-2xl italic text-gray-600 mb-8 px-4 font-light">"${s.founder_pesan}"</p>
+                        <h4 class="font-extrabold text-2xl text-gray-800 mb-1">${s.founder_nama}</h4>
+                        <p class="text-indigo-600 font-bold tracking-wide">${s.founder_jabatan}</p>
                     </div>
-                    <div id="admin-courses-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10"></div>
-                </div>
+                </section>
 
-                <div id="tab-modules" class="admin-tab hidden fade-in">
-                    <div class="flex justify-between items-center mb-10">
-                        <div>
-                            <button onclick="switchAdminTab('courses')" class="text-sm text-indigo-600 font-extrabold hover:text-indigo-800 mb-4 flex items-center bg-indigo-50 px-4 py-2 rounded-full w-fit transition-colors"><i class="fas fa-arrow-left mr-2"></i> Kembali ke Daftar Kursus</button>
-                            <h2 class="text-4xl font-extrabold text-gray-900 tracking-tight">Kelola Modul Materi</h2>
+                <section id="courses" class="py-20 bg-gray-50 px-4 border-t border-gray-100">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="text-center mb-16">
+                            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-800 mb-4">Katalog Kursus</h2>
+                            <p class="text-gray-500 text-lg">Pilih program yang sesuai dengan tujuan karir Anda.</p>
                         </div>
-                        <button onclick="openModuleModal()" class="bg-indigo-600 text-white px-8 py-3.5 rounded-full font-extrabold hover:bg-indigo-700 shadow-lg flex items-center transform hover:-translate-y-1 transition-all"><i class="fas fa-plus mr-3"></i> Tambah Modul</button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            ${courseHtml}
+                        </div>
                     </div>
-                    <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                        <table class="w-full text-left border-collapse">
-                            <thead><tr class="bg-gray-50 text-gray-400 text-xs uppercase tracking-widest font-extrabold"><th class="p-6 border-b">Judul Modul</th><th class="p-6 border-b w-32">Format</th><th class="p-6 border-b">Tautan Konten</th><th class="p-6 border-b text-right w-48">Aksi</th></tr></thead>
-                            <tbody id="admin-module-list" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </div>
+                </section>
+                
+                <footer class="bg-gray-900 text-gray-400 py-10 text-center text-sm border-t border-gray-800">
+                    <p>&copy; ${new Date().getFullYear()} ${s.nama_platform}. All rights reserved.</p>
+                </footer>
+            `;
+        };
 
-                <div id="tab-enrollments" class="admin-tab hidden fade-in">
-                    <div class="mb-10"><h2 class="text-4xl font-extrabold text-gray-900 tracking-tight">Akses Kursus</h2></div>
-                    <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 mb-10">
-                        <h3 class="text-xl font-extrabold text-gray-800 mb-6 flex items-center tracking-tight"><i class="fas fa-key text-emerald-500 bg-emerald-50 p-3 rounded-xl mr-4"></i> Berikan Akses ke Siswa</h3>
-                        <form onsubmit="adminAddEnrollment(event)" class="flex flex-col md:flex-row gap-5 items-end">
-                            <div class="flex-1 w-full"><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Pilih Siswa</label><select id="enroll-user-select" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl bg-gray-50 font-medium"></select></div>
-                            <div class="flex-1 w-full"><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Pilih Kursus</label><select id="enroll-course-select" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl bg-gray-50 font-medium"></select></div>
-                            <button type="submit" class="bg-emerald-500 text-white px-10 py-4 rounded-2xl font-extrabold hover:bg-emerald-600 shadow-lg whitespace-nowrap transform hover:-translate-y-1 transition-all h-[58px]">Berikan Akses</button>
+        window.renderLogin = () => {
+            appEl.innerHTML = `
+                <div class="min-h-screen flex items-center justify-center p-4 bg-gray-50 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] fade-in">
+                    <div class="bg-white p-8 md:p-10 rounded-[2rem] shadow-2xl max-w-md w-full relative overflow-hidden border border-gray-100">
+                        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-blue-500"></div>
+                        <div class="text-center mb-8">
+                             <div class="w-16 h-16 bg-indigo-50 rounded-2xl mx-auto flex items-center justify-center text-indigo-600 text-3xl mb-4 shadow-inner"><i class="fas fa-graduation-cap"></i></div>
+                             <h2 class="text-2xl font-black text-gray-800">Selamat Datang</h2>
+                             <p class="text-sm text-gray-500 mt-2">Silakan masuk ke akun Anda</p>
+                        </div>
+                        
+                        <div class="flex bg-gray-100 rounded-xl p-1.5 mb-8">
+                            <button id="tab-student" class="flex-1 py-2.5 rounded-lg font-bold text-sm bg-white shadow-sm text-indigo-600 transition" onclick="toggleLoginTab('student')">Siswa</button>
+                            <button id="tab-admin" class="flex-1 py-2.5 rounded-lg font-bold text-sm text-gray-500 hover:text-gray-700 transition" onclick="toggleLoginTab('admin')">Administrator</button>
+                        </div>
+
+                        <form id="loginForm" onsubmit="handleLogin(event)">
+                            <div class="mb-5">
+                                <label class="block text-xs font-extrabold text-gray-500 uppercase mb-2 tracking-wide">Email / Username</label>
+                                <input type="email" id="loginEmail" required class="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            </div>
+                            <div class="mb-8">
+                                <label class="block text-xs font-extrabold text-gray-500 uppercase mb-2 tracking-wide">Password</label>
+                                <input type="password" id="loginPassword" required class="w-full px-5 py-3.5 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex justify-center items-center gap-2 text-lg">
+                                Masuk <i class="fas fa-sign-in-alt"></i>
+                            </button>
+                            <button type="button" onclick="renderLanding()" class="w-full mt-6 text-gray-400 text-sm font-bold hover:text-indigo-600 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+                            </button>
                         </form>
                     </div>
-                    <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                        <table class="w-full text-left border-collapse">
-                            <thead><tr class="bg-gray-50 text-gray-400 text-xs uppercase tracking-widest font-extrabold"><th class="p-6 border-b">Nama Siswa</th><th class="p-6 border-b">Kursus yang Diakses</th><th class="p-6 border-b text-right">Aksi</th></tr></thead>
-                            <tbody id="admin-enroll-list" class="divide-y divide-gray-100"></tbody>
+                </div>
+            `;
+            // Reset state
+            state.loginRole = 'student';
+        };
+
+        window.toggleLoginTab = (tab) => {
+            state.loginRole = tab;
+            const sBtn = document.getElementById('tab-student');
+            const aBtn = document.getElementById('tab-admin');
+            
+            if(tab === 'student') {
+                sBtn.className = "flex-1 py-2.5 rounded-lg font-bold text-sm bg-white shadow-sm text-indigo-600 transition";
+                aBtn.className = "flex-1 py-2.5 rounded-lg font-bold text-sm text-gray-500 hover:text-gray-700 transition";
+            } else {
+                aBtn.className = "flex-1 py-2.5 rounded-lg font-bold text-sm bg-white shadow-sm text-indigo-600 transition";
+                sBtn.className = "flex-1 py-2.5 rounded-lg font-bold text-sm text-gray-500 hover:text-gray-700 transition";
+            }
+        };
+
+        window.handleLogin = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+            if(IS_PREVIEW) {
+                setTimeout(() => {
+                    if(state.loginRole === 'admin') {
+                        state.user = { role: 'admin', email: email };
+                        renderAdminPanel();
+                    } else {
+                        state.user = { role: 'student', id: '1', nama: 'Siswa Demo', email: email };
+                        renderStudentPanel();
+                    }
+                    showToast("Login Preview Berhasil");
+                }, 1000);
+                return;
+            }
+
+            try {
+                if(state.loginRole === 'admin') {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                    state.user = { role: 'admin', email: email };
+                    renderAdminPanel();
+                } else {
+                    const snap = await getDocs(query(collection(db, "users"), where("email", "==", email), where("password", "==", pass)));
+                    if(snap.empty) throw new Error("Kredensial salah atau pengguna tidak ditemukan.");
+                    const userData = snap.docs[0].data();
+                    state.user = { id: snap.docs[0].id, role: 'student', ...userData };
+                    renderStudentPanel();
+                }
+                showToast("Login Berhasil!");
+            } catch(err) {
+                showToast(err.message, 'error');
+                btn.innerHTML = 'Masuk <i class="fas fa-sign-in-alt"></i>';
+            }
+        };
+
+        window.logout = async () => {
+            if(!IS_PREVIEW) {
+                try { await signOut(auth); } catch(e){}
+            }
+            state.user = null;
+            renderLanding();
+        };
+
+        // ==========================================
+        // 5. RENDERER ADMIN PANEL
+        // ==========================================
+        window.renderAdminPanel = () => {
+            appEl.innerHTML = `
+                <div class="flex h-screen bg-gray-50 overflow-hidden fade-in relative z-50">
+                    <!-- Sidebar -->
+                    <aside class="admin-sidebar w-64 glass-dark text-gray-300 flex flex-col z-40 shadow-2xl shrink-0 h-full overflow-y-auto">
+                        <div class="p-6 flex items-center gap-3 border-b border-gray-700/50">
+                            <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-shield-alt text-xl"></i></div>
+                            <span class="font-extrabold text-white text-lg tracking-wider">ADMIN PANEL</span>
+                        </div>
+                        <nav class="flex-1 py-8 px-4 flex flex-col gap-2">
+                            <button onclick="adminRender.siswa()" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-4 font-semibold text-sm" data-target="siswa"><i class="fas fa-users w-5 text-center"></i> Kelola Siswa</button>
+                            <button onclick="adminRender.kursus()" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-4 font-semibold text-sm" data-target="kursus"><i class="fas fa-book w-5 text-center"></i> Kelola Kursus</button>
+                            <button onclick="adminRender.akses()" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-4 font-semibold text-sm" data-target="akses"><i class="fas fa-key w-5 text-center"></i> Akses Kursus</button>
+                            <button onclick="adminRender.pengaturan()" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-4 font-semibold text-sm" data-target="pengaturan"><i class="fas fa-cog w-5 text-center"></i> Pengaturan</button>
+                        </nav>
+                        <div class="p-6 border-t border-gray-700/50">
+                            <button onclick="logout()" class="w-full py-3 px-4 rounded-xl text-red-400 hover:bg-red-500/10 font-bold transition flex items-center justify-center gap-3">
+                                <i class="fas fa-sign-out-alt"></i> Keluar
+                            </button>
+                        </div>
+                    </aside>
+                    
+                    <!-- Main -->
+                    <main class="admin-main flex-1 h-full overflow-y-auto bg-gray-50">
+                        <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-gray-100 px-6 py-4 flex justify-between items-center shadow-sm">
+                            <h2 id="page-title" class="font-extrabold text-2xl text-gray-800">Dashboard</h2>
+                            <div class="flex items-center gap-3 bg-gray-50 px-5 py-2 rounded-full border border-gray-100">
+                                <span class="text-sm font-bold text-gray-700">Administrator</span>
+                                <i class="fas fa-user-circle text-indigo-600 text-2xl"></i>
+                            </div>
+                        </header>
+                        <div id="admin-content" class="p-6 md:p-8 max-w-7xl mx-auto"></div>
+                    </main>
+
+                    <!-- Mobile Nav -->
+                    <nav class="admin-bottom-nav glass-dark fixed bottom-0 w-full z-50 flex justify-around p-3 text-gray-400 border-t border-gray-700 pb-safe">
+                        <button onclick="adminRender.siswa()" class="nav-btn p-3 rounded-xl hover:text-white flex flex-col items-center gap-1" data-target="siswa"><i class="fas fa-users text-xl"></i><span class="text-[10px] font-bold">Siswa</span></button>
+                        <button onclick="adminRender.kursus()" class="nav-btn p-3 rounded-xl hover:text-white flex flex-col items-center gap-1" data-target="kursus"><i class="fas fa-book text-xl"></i><span class="text-[10px] font-bold">Kursus</span></button>
+                        <button onclick="adminRender.akses()" class="nav-btn p-3 rounded-xl hover:text-white flex flex-col items-center gap-1" data-target="akses"><i class="fas fa-key text-xl"></i><span class="text-[10px] font-bold">Akses</span></button>
+                        <button onclick="adminRender.pengaturan()" class="nav-btn p-3 rounded-xl hover:text-white flex flex-col items-center gap-1" data-target="pengaturan"><i class="fas fa-cog text-xl"></i><span class="text-[10px] font-bold">Seting</span></button>
+                    </nav>
+                </div>
+            `;
+            window.adminRender.siswa(); // Render first tab
+        };
+
+        const updateNavActive = (id) => {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                if(btn.dataset.target === id) btn.classList.add('bg-indigo-600', 'text-white');
+            });
+        };
+
+        window.adminRender = {
+            siswa: async () => {
+                document.getElementById('page-title').innerText = "Kelola Siswa";
+                updateNavActive('siswa');
+                let users = [];
+                if(!IS_PREVIEW) {
+                    const snap = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+                    users = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                } else {
+                    users = [{id: '1', nama: 'Agus Permana', email: 'aguspermana.new@gmail.com'}, {id: '2', nama: 'Siswa Demo', email: 'siswa@ywc.com'}];
+                }
+
+                let html = `
+                    <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8 fade-in relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-40 h-40 bg-indigo-50 rounded-bl-full -z-10"></div>
+                        <h3 class="text-lg font-bold mb-6 flex items-center gap-3"><div class="w-10 h-10 bg-indigo-100 text-indigo-600 flex items-center justify-center rounded-xl"><i class="fas fa-user-plus"></i></div> Daftarkan Siswa Baru</h3>
+                        <form onsubmit="adminAction.addStudent(event)" class="flex flex-col md:flex-row gap-5 items-end">
+                            <div class="w-full md:w-2/5">
+                                <label class="text-xs font-bold text-gray-500 mb-2 block uppercase">Nama Lengkap</label>
+                                <input type="text" id="add-s-nama" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            </div>
+                            <div class="w-full md:w-2/5">
+                                <label class="text-xs font-bold text-gray-500 mb-2 block uppercase">Email (Username)</label>
+                                <input type="email" id="add-s-email" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                                <p class="text-[10px] text-gray-400 mt-2 font-semibold"><i class="fas fa-info-circle text-indigo-400"></i> Password dibuat otomatis & draf email disiapkan.</p>
+                            </div>
+                            <button type="submit" class="w-full md:w-1/5 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">Daftarkan</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-2 shadow-sm border border-gray-100 fade-in overflow-x-auto">
+                        <table class="w-full text-left min-w-[700px]">
+                            <thead>
+                                <tr class="text-xs font-extrabold text-gray-400 uppercase border-b border-gray-100 bg-gray-50">
+                                    <th class="py-4 px-6 rounded-tl-xl">Nama Siswa</th>
+                                    <th class="py-4 px-6">Email / Username</th>
+                                    <th class="py-4 px-6">Status</th>
+                                    <th class="py-4 px-6 rounded-tr-xl text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${users.map(u => `
+                                    <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition">
+                                        <td class="py-4 px-6 font-bold text-gray-800 uppercase">${u.nama}</td>
+                                        <td class="py-4 px-6 text-gray-600">${u.email}</td>
+                                        <td class="py-4 px-6"><span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Member</span></td>
+                                        <td class="py-4 px-6 flex gap-2 justify-end">
+                                            <button onclick="adminAction.resetPassword('${u.id}', '${u.nama}', '${u.email}')" class="bg-orange-50 text-orange-600 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-orange-100 transition shadow-sm" title="Reset Password"><i class="fas fa-key"></i></button>
+                                            <button onclick="adminAction.deleteUser('${u.id}')" class="bg-red-50 text-red-600 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-red-100 transition shadow-sm" title="Hapus Siswa"><i class="fas fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                                ${users.length === 0 ? '<tr><td colspan="4" class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-folder-open text-3xl mb-3 block"></i>Belum ada data siswa.</td></tr>' : ''}
+                            </tbody>
                         </table>
                     </div>
-                </div>
+                `;
+                document.getElementById('admin-content').innerHTML = html;
+            },
+            
+            kursus: async () => {
+                document.getElementById('page-title').innerText = "Kelola Kursus";
+                updateNavActive('kursus');
+                let courses = [];
+                if(!IS_PREVIEW){
+                    const snap = await getDocs(collection(db, "courses"));
+                    courses = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                } else {
+                    courses = [{id: '1', judul: 'Membuat Website AI', deskripsi: 'Kelas dasar web AI', thumbnail_url: '', jumlah_siswa: 2}];
+                }
 
-                <div id="tab-settings" class="admin-tab hidden fade-in">
-                    <div class="mb-10"><h2 class="text-4xl font-extrabold text-gray-900 tracking-tight">Pengaturan Platform</h2></div>
-                    <div class="bg-white p-10 rounded-[2rem] shadow-sm border border-gray-100 max-w-4xl">
-                        <form onsubmit="saveSettings(event)" class="space-y-8">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Nama Platform LMS</label><input type="text" id="set-plat-name" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-gray-50 font-medium"></div>
-                                <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">URL Logo (Link GDrive)</label><input type="text" id="set-plat-logo" placeholder="Kosongkan jika hanya ingin teks" class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-gray-50 font-medium"></div>
+                let html = `
+                    <div class="flex justify-end mb-6 fade-in">
+                        <button onclick="adminAction.showAddCourse()" class="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition flex items-center gap-2"><i class="fas fa-plus"></i> Tambah Kursus</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">
+                        ${courses.map(c => `
+                            <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-xl transition group">
+                                <div class="relative h-48 overflow-hidden">
+                                    <img src="${getGDriveThumbnail(c.thumbnail_url)}" ${imageFallback} class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                                    <div class="absolute top-4 left-4 bg-indigo-600/90 backdrop-blur-sm text-white text-xs font-bold px-4 py-1.5 rounded-full shadow"><i class="fas fa-users mr-1"></i> ${c.jumlah_siswa || 0} Siswa Terdaftar</div>
+                                </div>
+                                <div class="p-6 flex-1 flex flex-col bg-white">
+                                    <h4 class="font-extrabold text-xl mb-4 text-gray-800 line-clamp-2 leading-tight flex-1">${c.judul}</h4>
+                                    <div class="grid grid-cols-2 gap-3 mb-4">
+                                        <button onclick="adminAction.showEditCourse('${c.id}')" class="bg-yellow-50 text-yellow-700 py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-100 transition shadow-sm">Edit Kursus</button>
+                                        <button onclick="adminAction.deleteCourse('${c.id}')" class="bg-red-50 text-red-700 py-2.5 rounded-xl font-bold text-sm hover:bg-red-100 transition shadow-sm">Hapus</button>
+                                    </div>
+                                    <button onclick="adminRender.modul('${c.id}', '${c.judul.replace(/'/g, "\\'")}')" class="w-full bg-indigo-50 text-indigo-700 py-3 rounded-xl font-bold text-sm hover:bg-indigo-100 transition flex items-center justify-center gap-2"><i class="fas fa-list-ul"></i> Kelola Modul Materi</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                document.getElementById('admin-content').innerHTML = html;
+            },
+            
+            modul: async (courseId, courseTitle) => {
+                document.getElementById('page-title').innerHTML = `<button onclick="adminRender.kursus()" class="text-gray-400 hover:text-indigo-600 transition mr-3"><i class="fas fa-arrow-left"></i></button> Modul: ${courseTitle}`;
+                
+                let modules = [];
+                if(!IS_PREVIEW){
+                    const snap = await getDocs(query(collection(db, "modules"), where("course_id", "==", courseId)));
+                    modules = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.urutan - b.urutan);
+                } else {
+                    modules = [{id: 'm1', urutan: 1, judul_modul: 'Video Intro', tipe: 'video'}];
+                }
+
+                let html = `
+                    <div class="flex flex-col lg:flex-row gap-8 fade-in">
+                        <div class="w-full lg:w-1/3">
+                            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-24">
+                                <h3 class="font-extrabold text-lg mb-6 text-gray-800">Tambah Modul Baru</h3>
+                                <form onsubmit="adminAction.addModule(event, '${courseId}', '${courseTitle.replace(/'/g, "\\'")}')" class="flex flex-col gap-5">
+                                    <div>
+                                        <label class="text-xs font-bold text-gray-500 mb-2 block uppercase tracking-wide">Urutan</label>
+                                        <input type="number" id="add-m-urutan" required class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value="${modules.length + 1}">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-gray-500 mb-2 block uppercase tracking-wide">Judul Modul</label>
+                                        <input type="text" id="add-m-judul" required class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-gray-500 mb-2 block uppercase tracking-wide">Tipe Konten</label>
+                                        <select id="add-m-tipe" class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-gray-700" onchange="document.getElementById('m-url-label').innerText = this.value === 'text' ? 'ISI TEKS / ARTIKEL' : 'LINK URL (YOUTUBE / GDRIVE)'">
+                                            <option value="video">Video (YouTube Link)</option>
+                                            <option value="gdrive_video">Video (Google Drive Link)</option>
+                                            <option value="gdrive_pdf">File PDF (Google Drive Link)</option>
+                                            <option value="text">Teks / Artikel Bebas</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label id="m-url-label" class="text-xs font-bold text-gray-500 mb-2 block uppercase tracking-wide">LINK URL (YOUTUBE / GDRIVE)</label>
+                                        <textarea id="add-m-url" required rows="4" class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition shadow-lg">Simpan Modul</button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="w-full lg:w-2/3">
+                            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                                <h3 class="font-extrabold text-lg mb-6 text-gray-800 border-b pb-4">Daftar Modul</h3>
+                                <div class="flex flex-col gap-4">
+                                    ${modules.map(m => `
+                                        <div class="flex justify-between items-center p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition shadow-sm">
+                                            <div class="flex items-center gap-4">
+                                                <div class="bg-gray-100 text-gray-600 text-sm font-black w-12 h-12 flex items-center justify-center rounded-xl">M${m.urutan}</div>
+                                                <div>
+                                                    <span class="font-bold text-gray-800 text-lg block">${m.judul_modul}</span>
+                                                    <span class="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded">${m.tipe.replace('_', ' ')}</span>
+                                                </div>
+                                            </div>
+                                            <button onclick="adminAction.deleteModule('${m.id}', '${courseId}', '${courseTitle.replace(/'/g, "\\'")}')" class="text-red-500 hover:text-red-700 bg-red-50 w-10 h-10 rounded-xl flex items-center justify-center transition"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    `).join('')}
+                                    ${modules.length === 0 ? '<div class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-box-open text-3xl mb-2 block"></i>Belum ada modul materi.</div>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('admin-content').innerHTML = html;
+            },
+            
+            akses: async () => {
+                document.getElementById('page-title').innerText = "Akses Kursus";
+                updateNavActive('akses');
+                
+                let users = [], courses = [], enrollments = [];
+                if(!IS_PREVIEW){
+                    const [uSnap, cSnap, eSnap] = await Promise.all([
+                        getDocs(query(collection(db, "users"), where("role", "==", "student"))),
+                        getDocs(collection(db, "courses")),
+                        getDocs(collection(db, "enrollments"))
+                    ]);
+                    users = uSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                    courses = cSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                    enrollments = eSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                }
+
+                let html = `
+                    <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-8 fade-in relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -z-10"></div>
+                        <h3 class="text-lg font-bold mb-6 flex items-center gap-3"><div class="w-10 h-10 bg-green-100 text-green-600 flex items-center justify-center rounded-xl"><i class="fas fa-key"></i></div> Berikan Akses ke Siswa</h3>
+                        <form onsubmit="adminAction.grantAccess(event)" class="flex flex-col md:flex-row gap-5 items-end">
+                            <div class="w-full md:w-2/5">
+                                <label class="text-xs font-bold text-gray-500 mb-2 block uppercase">Pilih Siswa</label>
+                                <select id="acc-user" required class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold">
+                                    <option value="">-- Pilih Siswa --</option>
+                                    ${users.map(u => `<option value="${u.id}">${u.nama}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="w-full md:w-2/5">
+                                <label class="text-xs font-bold text-gray-500 mb-2 block uppercase">Pilih Kursus</label>
+                                <select id="acc-course" required class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold">
+                                    <option value="">-- Pilih Kursus --</option>
+                                    ${courses.map(c => `<option value="${c.id}">${c.judul}</option>`).join('')}
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full md:w-1/5 bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 transition shadow-lg shadow-green-200">Berikan Akses</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-2 shadow-sm border border-gray-100 fade-in overflow-x-auto">
+                        <table class="w-full text-left min-w-[700px]">
+                            <thead>
+                                <tr class="text-xs font-extrabold text-gray-400 uppercase border-b border-gray-100 bg-gray-50">
+                                    <th class="py-4 px-6 rounded-tl-xl">Nama Siswa</th>
+                                    <th class="py-4 px-6">Kursus Yang Diakses</th>
+                                    <th class="py-4 px-6">Progres</th>
+                                    <th class="py-4 px-6 rounded-tr-xl text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${enrollments.map(e => {
+                                    const u = users.find(x => x.id === e.user_id);
+                                    const c = courses.find(x => x.id === e.course_id);
+                                    if(!u || !c) return '';
+                                    return `
+                                    <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition">
+                                        <td class="py-4 px-6 font-bold text-gray-800 uppercase">${u.nama}</td>
+                                        <td class="py-4 px-6 text-indigo-600 font-bold">${c.judul}</td>
+                                        <td class="py-4 px-6 font-bold text-green-600">${e.progress_percent || 0}%</td>
+                                        <td class="py-4 px-6 flex justify-end">
+                                            <button onclick="adminAction.revokeAccess('${e.id}')" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl hover:bg-red-100 transition text-xs font-bold">Cabut Akses</button>
+                                        </td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                document.getElementById('admin-content').innerHTML = html;
+            },
+            
+            pengaturan: () => {
+                document.getElementById('page-title').innerText = "Pengaturan Platform";
+                updateNavActive('pengaturan');
+                const s = state.settings;
+                
+                let html = `
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 fade-in max-w-4xl mx-auto">
+                        <form onsubmit="adminAction.saveSettings(event)" class="flex flex-col gap-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">Nama Platform LMS</label>
+                                    <input type="text" id="set-nama" value="${s.nama_platform || ''}" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-semibold">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">URL Logo (Link GDrive)</label>
+                                    <input type="text" id="set-logo" value="${s.logo_url || ''}" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
                             </div>
                             
-                            <hr class="border-gray-100 my-8">
-                            <h3 class="text-2xl font-extrabold text-gray-800 mb-6 tracking-tight flex items-center"><i class="fas fa-user-tie text-indigo-500 bg-indigo-50 p-3 rounded-xl mr-4"></i> Profil Founder (Halaman Depan)</h3>
-                            <div class="space-y-6 bg-gray-50 p-8 rounded-3xl border border-gray-100">
-                                <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Nama Founder</label><input type="text" id="set-founder-name" placeholder="Misal: John Doe, S.Kom." class="w-full px-5 py-4 border border-white rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-white font-medium shadow-sm"></div>
-                                <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Jabatan / Gelar</label><input type="text" id="set-founder-title" placeholder="Misal: CEO & Founder" class="w-full px-5 py-4 border border-white rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-white font-medium shadow-sm"></div>
-                                <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">URL Foto Founder (Link GDrive)</label><input type="text" id="set-founder-photo" placeholder="https://..." class="w-full px-5 py-4 border border-white rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-white font-medium shadow-sm"></div>
-                                <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Pesan Sambutan</label><textarea id="set-founder-msg" placeholder="Tuliskan kata sambutan untuk pengunjung web..." class="w-full px-5 py-4 border border-white rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-white font-medium h-40 resize-y shadow-sm"></textarea></div>
-                            </div>
-
-                            <hr class="border-gray-100 my-8">
-                            <h3 class="text-2xl font-extrabold text-gray-800 mb-6 tracking-tight flex items-center"><i class="fas fa-certificate text-yellow-500 bg-yellow-50 p-3 rounded-xl mr-4"></i> Pengaturan Sertifikat</h3>
-                            <div class="space-y-6 bg-gray-50 p-8 rounded-3xl border border-gray-100">
+                            <div class="border border-indigo-100 p-8 rounded-[2rem] bg-indigo-50/30 relative mt-4">
+                                <h4 class="font-extrabold text-indigo-900 mb-6 flex items-center gap-3"><div class="w-10 h-10 bg-indigo-100 flex items-center justify-center rounded-xl text-indigo-600"><i class="fas fa-user-tie text-xl"></i></div> Profil Founder (Halaman Depan)</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div><label class="text-xs font-bold text-gray-500 uppercase block mb-2">Nama Founder</label><input type="text" id="set-fnama" value="${s.founder_nama || ''}" class="w-full px-5 py-3 bg-white border border-gray-200 rounded-xl outline-none font-semibold"></div>
+                                    <div><label class="text-xs font-bold text-gray-500 uppercase block mb-2">Jabatan / Gelar</label><input type="text" id="set-fjabatan" value="${s.founder_jabatan || ''}" class="w-full px-5 py-3 bg-white border border-gray-200 rounded-xl outline-none font-semibold"></div>
+                                </div>
+                                <div class="mb-6">
+                                    <label class="text-xs font-bold text-gray-500 uppercase block mb-2">URL Foto Founder (Link GDrive)</label>
+                                    <input type="text" id="set-ffoto" value="${s.founder_foto || ''}" class="w-full px-5 py-3 bg-white border border-gray-200 rounded-xl outline-none">
+                                </div>
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Jumlah Penandatangan</label>
-                                    <select id="set-cert-type" onchange="toggleCertSigners()" class="w-full px-5 py-4 border border-white rounded-2xl focus:ring-4 focus:ring-indigo-500/20 bg-white font-bold shadow-sm">
-                                        <option value="1">1 Penandatangan</option>
-                                        <option value="2">2 Penandatangan</option>
-                                    </select>
+                                    <label class="text-xs font-bold text-gray-500 uppercase block mb-2">Pesan Sambutan</label>
+                                    <textarea id="set-fpesan" rows="4" class="w-full px-5 py-3 bg-white border border-gray-200 rounded-xl outline-none">${s.founder_pesan || ''}</textarea>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
-                                    <div class="col-span-full"><h4 class="font-extrabold text-indigo-800 border-b border-indigo-100 pb-2">Data Penandatangan 1</h4></div>
-                                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Nama</label><input type="text" id="set-cert-s1-name" placeholder="Misal: Budi Santoso" class="w-full px-5 py-4 border border-white rounded-2xl bg-white shadow-sm font-medium"></div>
-                                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Jabatan</label><input type="text" id="set-cert-s1-title" placeholder="Misal: Instruktur Utama" class="w-full px-5 py-4 border border-white rounded-2xl bg-white shadow-sm font-medium"></div>
-                                    <div class="col-span-full"><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">URL Gambar Tanda Tangan (Link GDrive)</label><input type="text" id="set-cert-s1-sig" placeholder="Gambar transparan PNG direkomendasikan" class="w-full px-5 py-4 border border-white rounded-2xl bg-white shadow-sm font-medium"></div>
-                                </div>
-                                <div id="cert-signer-2-box" class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
-                                    <div class="col-span-full"><h4 class="font-extrabold text-emerald-800 border-b border-emerald-100 pb-2">Data Penandatangan 2</h4></div>
-                                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Nama</label><input type="text" id="set-cert-s2-name" placeholder="Misal: Agus Permana" class="w-full px-5 py-4 border border-white rounded-2xl bg-white shadow-sm font-medium"></div>
-                                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Jabatan</label><input type="text" id="set-cert-s2-title" placeholder="Misal: Direktur LMS" class="w-full px-5 py-4 border border-white rounded-2xl bg-white shadow-sm font-medium"></div>
-                                    <div class="col-span-full"><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">URL Gambar Tanda Tangan (Link GDrive)</label><input type="text" id="set-cert-s2-sig" placeholder="Gambar transparan PNG direkomendasikan" class="w-full px-5 py-4 border border-white rounded-2xl bg-white shadow-sm font-medium"></div>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-2 font-medium ml-1"><i class="fas fa-info-circle mr-1 text-indigo-400"></i> *Logo institusi pada sertifikat otomatis mengambil Logo Platform Anda di atas.</p>
                             </div>
 
-                            <div class="pt-6"><button type="submit" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-extrabold hover:bg-indigo-700 shadow-lg transform hover:-translate-y-1 transition-all">Simpan Pengaturan</button></div>
+                            <div class="border border-green-100 p-8 rounded-[2rem] bg-green-50/30 relative">
+                                <h4 class="font-extrabold text-green-900 mb-6 flex items-center gap-3"><div class="w-10 h-10 bg-green-100 flex items-center justify-center rounded-xl text-green-600"><i class="fas fa-paper-plane text-xl"></i></div> Integrasi Email Otomatis (Opsional)</h4>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 uppercase block mb-2">URL Google Apps Script (Web App API)</label>
+                                    <input type="text" id="set-gas" value="${s.gas_url || ''}" placeholder="Biarkan kosong jika ingin menggunakan pop-up mailto manual" class="w-full px-5 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500">
+                                    <p class="text-[10px] text-gray-500 mt-2 font-semibold"><i class="fas fa-info-circle text-green-500"></i> Masukkan URL hasil deploy Google Apps Script untuk mengirimkan password baru otomatis tanpa pop-up Gmail.</p>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full md:w-auto self-end bg-indigo-600 text-white font-bold px-10 py-4 rounded-xl hover:bg-indigo-700 shadow-xl shadow-indigo-200 text-lg transition">Simpan Pengaturan</button>
                         </form>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                `;
+                document.getElementById('admin-content').innerHTML = html;
+            }
+        };
 
-    <div id="page-member" class="page-section hidden fade-in bg-gray-50 min-h-screen">
-        <div class="bg-indigo-900 pb-32 pt-12">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight drop-shadow-md">Ruang Belajar Saya</h1>
-                <p class="text-indigo-200 text-lg font-medium">Lanjutkan progres pembelajaran Anda dan raih sertifikasi.</p>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 pb-20">
-            <div id="member-courses-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"></div>
-        </div>
-    </div>
+        window.adminAction = {
+            addStudent: async (e) => {
+                e.preventDefault();
+                const nama = document.getElementById('add-s-nama').value;
+                const email = document.getElementById('add-s-email').value;
+                const password = generateRandomPassword(8); // Password acak
 
-    <div id="page-classroom" class="page-section hidden bg-slate-900 text-gray-100 min-h-screen">
-        <div class="flex flex-col lg:flex-row h-[calc(100vh-72px)]">
-            <div class="flex-1 lg:w-3/4 flex flex-col bg-black relative">
-                <div class="p-4 bg-slate-900 flex justify-between items-center z-10 border-b border-slate-800 shadow-md">
-                    <button onclick="showPage('member')" class="text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center border border-slate-700"><i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard</button>
-                    <button onclick="downloadCertificate()" id="btn-cert" class="hidden bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-6 py-2.5 rounded-xl font-extrabold shadow-lg hover:from-yellow-500 hover:to-yellow-600 text-sm transition-all transform hover:scale-105 flex items-center"><i class="fas fa-award mr-2 text-lg"></i> Unduh Sertifikat</button>
-                </div>
-                
-                <div class="flex-grow flex flex-col overflow-y-auto custom-scrollbar">
-                    <div class="p-4 bg-slate-900 flex justify-between items-center border-b border-slate-800">
-                        <span id="viewer-type-label" class="text-xs font-extrabold text-indigo-400 uppercase tracking-widest bg-indigo-900/30 px-3 py-1 rounded-md border border-indigo-500/30">Memuat Pemutar...</span>
-                        <button onclick="toggleFullscreenViewer()" id="btn-fullscreen-viewer" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-5 py-2.5 rounded-lg flex items-center font-bold transition-colors shadow-md border border-indigo-500"><i class="fas fa-expand mr-2"></i> Buka Layar Penuh (Khusus PDF/Video)</button>
-                    </div>
+                if(!IS_PREVIEW){
+                    const ref = doc(collection(db, "users"));
+                    await setDoc(ref, { id: ref.id, nama, email, password: password, role: "student" });
                     
-                    <div id="class-video-container" class="video-container hidden m-4 md:m-8">
-                        <div class="vid-protector-top" oncontextmenu="return false;"></div>
-                        <iframe id="class-video" src="" allowfullscreen oncontextmenu="return false;"></iframe>
-                    </div>
+                    const platformName = state.settings.nama_platform || "YWC LMS";
+                    const subject = encodeURIComponent(`Akses Akun - ${platformName}`);
+                    const body = encodeURIComponent(`Halo ${nama},\n\nAkun Anda telah dibuat.\n\nLogin: ${email}\nPassword: ${password}\n\nSilakan masuk di: ${window.location.href}\n\nSalam,\nAdmin`);
                     
-                    <div id="class-content" class="p-6 md:p-10 bg-slate-900 flex-grow">
-                        <h2 id="class-module-title" class="text-4xl font-extrabold text-white mb-10 tracking-tight">Pilih modul di panel samping.</h2>
-                        <div class="border-b border-slate-800 mb-8">
-                            <nav class="-mb-px flex space-x-10" aria-label="Tabs">
-                                <button onclick="switchClassTab('catatan')" id="tab-btn-catatan" class="border-indigo-500 text-indigo-400 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm tracking-wide">Catatan Pribadi</button>
-                                <button onclick="switchClassTab('forum')" id="tab-btn-forum" class="border-transparent text-gray-500 hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tracking-wide">Diskusi</button>
-                                <button onclick="switchClassTab('quiz')" id="tab-btn-quiz" class="border-transparent text-gray-500 hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tracking-wide">Kuis Evaluasi</button>
-                            </nav>
+                    if(state.settings.gas_url) {
+                        showToast("Memproses pengiriman email otomatis...", "success");
+                        try {
+                            await fetch(state.settings.gas_url, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                headers: { 'Content-Type': 'text/plain' },
+                                body: JSON.stringify({ to: email, subject: decodeURIComponent(subject), message: decodeURIComponent(body) })
+                            });
+                            showToast("Siswa ditambahkan & Email otomatis terkirim!");
+                        } catch(err) {
+                            showToast("Siswa ditambahkan, tapi email otomatis gagal.", "error");
+                        }
+                    } else {
+                        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                        showToast("Siswa ditambahkan. Draft Email dibuka.");
+                    }
+                    adminRender.siswa();
+                } else {
+                    showToast("Mode Preview: Siswa Ditambah. Pass: " + password);
+                }
+            },
+            deleteUser: async (id) => {
+                if(confirm("Hapus data siswa ini secara permanen?")) {
+                    if(!IS_PREVIEW) await deleteDoc(doc(db, "users", id));
+                    showToast("Siswa berhasil dihapus");
+                    adminRender.siswa();
+                }
+            },
+            resetPassword: async (id, nama, email) => {
+                const newPass = generateRandomPassword(8);
+                if(confirm(`Reset password untuk ${nama} menjadi acak?`)) {
+                    if(!IS_PREVIEW) {
+                        await updateDoc(doc(db, "users", id), { password: newPass });
+                        const platformName = state.settings.nama_platform || "YWC LMS";
+                        const subject = encodeURIComponent(`Reset Password LMS - ${platformName}`);
+                        const body = encodeURIComponent(`Halo ${nama},\n\nPassword baru Anda: ${newPass}\n\nSilakan masuk di: ${window.location.href}`);
+                        
+                        if(state.settings.gas_url) {
+                            showToast("Mengirim password baru via email otomatis...", "success");
+                            try {
+                                await fetch(state.settings.gas_url, {
+                                    method: 'POST',
+                                    mode: 'no-cors',
+                                    headers: { 'Content-Type': 'text/plain' },
+                                    body: JSON.stringify({ to: email, subject: decodeURIComponent(subject), message: decodeURIComponent(body) })
+                                });
+                                showToast("Password direset & Email otomatis terkirim!");
+                            } catch(err) {
+                                showToast("Gagal memanggil API Email.", "error");
+                            }
+                        } else {
+                            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                            showToast("Password direset. Draft Email dibuka.");
+                        }
+                    } else {
+                        showToast(`Mode Preview. Pass baru: ${newPass}`);
+                    }
+                    adminRender.siswa();
+                }
+            },
+            showAddCourse: () => {
+                document.getElementById('modal-container').innerHTML = `
+                    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex justify-center items-center p-4 fade-in">
+                        <div class="bg-white rounded-[2rem] p-8 w-full max-w-xl shadow-2xl relative">
+                            <h3 class="font-black text-2xl mb-6 text-gray-800" id="modal-title">Tambah Kursus</h3>
+                            <form onsubmit="adminAction.saveCourse(event)" class="flex flex-col gap-5">
+                                <input type="hidden" id="c-id">
+                                <div><label class="text-xs font-bold text-gray-500 uppercase block mb-2">Judul Kursus</label><input type="text" id="c-judul" required class="w-full bg-gray-50 border border-gray-200 px-5 py-3 rounded-xl font-bold"></div>
+                                <div><label class="text-xs font-bold text-gray-500 uppercase block mb-2">Deskripsi Singkat</label><textarea id="c-desk" rows="3" required class="w-full bg-gray-50 border border-gray-200 px-5 py-3 rounded-xl"></textarea></div>
+                                <div><label class="text-xs font-bold text-gray-500 uppercase block mb-2">URL Thumbnail (GDrive)</label><input type="text" id="c-thumb" class="w-full bg-gray-50 border border-gray-200 px-5 py-3 rounded-xl"></div>
+                                <div class="flex justify-end gap-3 mt-4">
+                                    <button type="button" onclick="document.getElementById('modal-container').innerHTML=''" class="px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">Batal</button>
+                                    <button type="submit" class="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">Simpan Data</button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="pb-12">
-                            <div id="ctab-catatan" class="fade-in">
-                                <textarea id="personal-note" class="w-full h-48 p-6 bg-slate-800 border border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 text-gray-200 placeholder-gray-500 resize-y font-medium shadow-inner" placeholder="Ketik catatan penting Anda dari materi ini..."></textarea>
-                                <button onclick="saveNote()" class="mt-6 bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition-colors">Simpan Catatan</button>
-                            </div>
-                            <div id="ctab-forum" class="hidden fade-in">
-                                <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 mb-8 shadow-md">
-                                    <textarea id="forum-input" class="w-full h-28 p-5 bg-slate-900 border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-gray-200 placeholder-gray-600 font-medium" placeholder="Tulis pertanyaan atau diskusi Anda di sini..."></textarea>
-                                    <button onclick="postForum()" class="mt-5 bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-500 transition-colors">Kirim ke Forum</button>
+                    </div>
+                `;
+            },
+            showEditCourse: async (id) => {
+                if(IS_PREVIEW) return showToast("Tidak tersedia di mode preview", "error");
+                adminAction.showAddCourse();
+                document.getElementById('modal-title').innerText = "Edit Kursus";
+                const docSnap = await getDoc(doc(db, "courses", id));
+                if (docSnap.exists()) {
+                    const c = docSnap.data();
+                    document.getElementById('c-id').value = id;
+                    document.getElementById('c-judul').value = c.judul;
+                    document.getElementById('c-desk').value = c.deskripsi;
+                    document.getElementById('c-thumb').value = c.thumbnail_url;
+                }
+            },
+            saveCourse: async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('c-id').value;
+                const data = {
+                    judul: document.getElementById('c-judul').value,
+                    deskripsi: document.getElementById('c-desk').value,
+                    thumbnail_url: document.getElementById('c-thumb').value
+                };
+                if(!IS_PREVIEW){
+                    if(id) {
+                        await updateDoc(doc(db, "courses", id), data);
+                    } else {
+                        const ref = doc(collection(db, "courses"));
+                        data.jumlah_siswa = 0; // default for new
+                        await setDoc(ref, { id: ref.id, ...data });
+                    }
+                    showToast("Data kursus berhasil disimpan");
+                    document.getElementById('modal-container').innerHTML='';
+                    adminRender.kursus();
+                }
+            },
+            deleteCourse: async (id) => {
+                if(confirm("Hapus kursus ini beserta semua modulnya?")) {
+                    if(!IS_PREVIEW) await deleteDoc(doc(db, "courses", id));
+                    showToast("Kursus dihapus");
+                    adminRender.kursus();
+                }
+            },
+            addModule: async (e, courseId, title) => {
+                e.preventDefault();
+                const data = {
+                    course_id: courseId,
+                    urutan: parseInt(document.getElementById('add-m-urutan').value),
+                    judul_modul: document.getElementById('add-m-judul').value,
+                    tipe: document.getElementById('add-m-tipe').value,
+                    konten_url: document.getElementById('add-m-url').value
+                };
+                if(!IS_PREVIEW){
+                    const ref = doc(collection(db, "modules"));
+                    await setDoc(ref, { id: ref.id, ...data });
+                    showToast("Modul berhasil ditambahkan");
+                    adminRender.modul(courseId, title);
+                }
+            },
+            deleteModule: async (id, courseId, title) => {
+                if(confirm("Hapus modul materi ini?")) {
+                    if(!IS_PREVIEW) await deleteDoc(doc(db, "modules", id));
+                    showToast("Modul dihapus");
+                    adminRender.modul(courseId, title);
+                }
+            },
+            grantAccess: async (e) => {
+                e.preventDefault();
+                const uid = document.getElementById('acc-user').value;
+                const cid = document.getElementById('acc-course').value;
+                if(!IS_PREVIEW){
+                    const ref = doc(collection(db, "enrollments"));
+                    await setDoc(ref, { id: ref.id, user_id: uid, course_id: cid, progress_percent: 0 });
+                    
+                    const cRef = doc(db, "courses", cid);
+                    const cSnap = await getDoc(cRef);
+                    if(cSnap.exists()){
+                        await updateDoc(cRef, { jumlah_siswa: (cSnap.data().jumlah_siswa || 0) + 1 });
+                    }
+                    showToast("Akses kursus berhasil diberikan");
+                    adminRender.akses();
+                }
+            },
+            revokeAccess: async (id) => {
+                if(confirm("Cabut akses siswa dari kursus ini?")) {
+                    if(!IS_PREVIEW) await deleteDoc(doc(db, "enrollments", id));
+                    showToast("Akses berhasil dicabut");
+                    adminRender.akses();
+                }
+            },
+            saveSettings: async (e) => {
+                e.preventDefault();
+                const data = {
+                    nama_platform: document.getElementById('set-nama').value,
+                    logo_url: document.getElementById('set-logo').value,
+                    founder_nama: document.getElementById('set-fnama').value,
+                    founder_jabatan: document.getElementById('set-fjabatan').value,
+                    founder_foto: document.getElementById('set-ffoto').value,
+                    founder_pesan: document.getElementById('set-fpesan').value,
+                    gas_url: document.getElementById('set-gas').value
+                };
+                if(!IS_PREVIEW){
+                    await setDoc(doc(db, "settings", "platform_config"), data, {merge: true});
+                    state.settings = {...state.settings, ...data};
+                    showToast("Pengaturan platform berhasil disimpan");
+                }
+            }
+        };
+
+        // ==========================================
+        // 6. RENDERER STUDENT PANEL (MEMBER)
+        // ==========================================
+        window.studentAction = {
+            toggleComplete: async (idx) => {
+                if(IS_PREVIEW) return showToast("Fungsi ini dinonaktifkan pada mode preview.", "error");
+                const m = window.currentModules[idx];
+                if(!window.currentEnrollment) return;
+                
+                let comp = window.currentEnrollment.completed_modules || [];
+                if(comp.includes(m.id)) {
+                    comp = comp.filter(id => id !== m.id); // Batalkan selesai
+                } else {
+                    comp.push(m.id); // Tandai selesai
+                }
+                
+                const progress = Math.round((comp.length / window.currentModules.length) * 100);
+                
+                const btn = document.getElementById('btn-mark-complete');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                
+                try {
+                    await updateDoc(doc(db, "enrollments", window.currentEnrollment.id), {
+                        completed_modules: comp,
+                        progress_percent: progress
+                    });
+                    
+                    window.currentEnrollment.completed_modules = comp;
+                    window.currentEnrollment.progress_percent = progress;
+                    
+                    window.renderModuleList();
+                    window.loadModule(idx); // Perbarui tampilan tombol
+                    showToast("Progress belajar diperbarui!");
+                } catch(e) {
+                    showToast("Gagal menyimpan progress", "error");
+                }
+            },
+            saveNote: async (courseId) => {
+                if(IS_PREVIEW) return showToast("Fungsi ini dinonaktifkan pada mode preview.", "error");
+                const content = document.getElementById('note-text').value;
+                const btn = document.getElementById('btn-save-note');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                
+                try {
+                    const q = query(collection(db, "notes"), where("user_id", "==", state.user.id), where("course_id", "==", courseId));
+                    const snap = await getDocs(q);
+                    if(snap.empty) {
+                        await addDoc(collection(db, "notes"), {
+                            user_id: state.user.id,
+                            course_id: courseId,
+                            content: content,
+                            updated_at: new Date().toISOString()
+                        });
+                    } else {
+                        await updateDoc(doc(db, "notes", snap.docs[0].id), {
+                            content: content,
+                            updated_at: new Date().toISOString()
+                        });
+                    }
+                    showToast("Catatan berhasil disimpan", "success");
+                } catch(e) {
+                    showToast("Gagal menyimpan catatan", "error");
+                }
+                btn.innerHTML = '<i class="fas fa-save mr-2"></i>Simpan Catatan';
+            },
+            loadDiskusi: async () => {
+                if(IS_PREVIEW) return;
+                const listEl = document.getElementById('diskusi-list');
+                listEl.innerHTML = '<div class="text-center py-6"><div class="loader mx-auto w-6 h-6 border-2"></div></div>';
+                
+                try {
+                    // Ambil diskusi untuk kursus ini
+                    const snap = await getDocs(query(collection(db, "discussions"), where("course_id", "==", window.currentCourseId)));
+                    let discussions = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    
+                    // Filter berdasarkan modul yang sedang dibuka (dilakukan di memori klien)
+                    discussions = discussions.filter(d => d.module_id === window.currentModuleId);
+                    
+                    // Urutkan dari yang terbaru (dilakukan di memori klien)
+                    discussions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    
+                    if(discussions.length === 0) {
+                        listEl.innerHTML = '<div class="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200"><p class="text-sm text-gray-500 font-bold"><i class="fas fa-comments text-2xl text-gray-300 mb-2 block"></i>Belum ada diskusi di materi ini.<br>Jadilah yang pertama bertanya!</p></div>';
+                        return;
+                    }
+                    
+                    listEl.innerHTML = discussions.map(d => `
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-3 fade-in">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-sm shrink-0 uppercase">${d.user_nama.charAt(0)}</div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-1">
+                                    <p class="text-sm font-extrabold text-gray-800">${d.user_nama}</p>
+                                    <span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded">${new Date(d.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</span>
                                 </div>
-                                <div id="forum-list" class="space-y-6">
-                                    <div class="p-6 bg-slate-800 rounded-2xl border border-slate-700 shadow-sm">
-                                        <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-indigo-600 flex justify-center items-center font-bold text-white mr-4 shadow-inner">AP</div><div><h5 class="text-base font-bold text-gray-100">Agus Permana</h5><p class="text-xs text-gray-500 mt-0.5">2 hari yang lalu</p></div></div>
-                                        <p class="text-gray-300 text-base leading-relaxed">Halo instruktur, apakah file materinya bisa didownload secara offline?</p>
-                                    </div>
-                                    <div class="p-6 bg-slate-800 rounded-2xl border border-l-4 border-l-indigo-500 ml-10 mt-2 shadow-sm">
-                                        <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-red-500 flex justify-center items-center font-bold text-white mr-4 shadow-inner"><i class="fas fa-shield-alt"></i></div><div><h5 class="text-base font-bold text-indigo-400">Admin Instruktur</h5><p class="text-xs text-gray-500 mt-0.5">1 hari yang lalu</p></div></div>
-                                        <p class="text-gray-300 text-base leading-relaxed">Halo Agus. Untuk keamanan intelektual, materi PDF dan Video hanya dapat diakses melalui platform ini secara online. Terima kasih atas pengertiannya.</p>
+                                <p class="text-sm text-gray-600 leading-relaxed">${d.message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                } catch(e) {
+                    listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-4">Gagal memuat diskusi.</p>';
+                }
+            },
+            postDiskusi: async () => {
+                if(IS_PREVIEW) return showToast("Fungsi ini dinonaktifkan pada mode preview.", "error");
+                const input = document.getElementById('diskusi-text');
+                const msg = input.value.trim();
+                if(!msg) return;
+                
+                const btn = document.getElementById('btn-post-diskusi');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                btn.disabled = true;
+                
+                try {
+                    const data = {
+                        course_id: window.currentCourseId,
+                        module_id: window.currentModuleId,
+                        user_id: state.user.id,
+                        user_nama: state.user.nama,
+                        message: msg,
+                        created_at: new Date().toISOString()
+                    };
+                    await addDoc(collection(db, "discussions"), data);
+                    input.value = '';
+                    studentAction.loadDiskusi(); // Muat ulang daftar diskusi
+                } catch(e) {
+                    showToast("Gagal mengirim pesan diskusi", "error");
+                }
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        window.renderStudentPanel = async () => {
+            appEl.innerHTML = `
+                <div class="flex flex-col h-screen bg-gray-50 overflow-hidden relative z-50">
+                    <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0 z-30 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl">Y</div>
+                            <span class="font-extrabold text-2xl text-gray-800 tracking-tight">${state.settings?.nama_platform || 'YWC LMS'}</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm font-bold text-gray-700 hidden md:inline">Halo, ${state.user?.nama}</span>
+                            <button onclick="logout()" class="text-red-500 hover:text-red-700 bg-red-50 px-4 py-2 rounded-full font-bold text-sm transition flex items-center gap-2"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+                        </div>
+                    </header>
+                    <main class="flex-1 overflow-y-auto p-6 md:p-10" id="student-content"></main>
+                </div>
+            `;
+            studentRender.dashboard();
+        };
+
+        window.studentRender = {
+            dashboard: async () => {
+                const el = document.getElementById('student-content');
+                let myCourses = [];
+                
+                if(!IS_PREVIEW) {
+                    const snap = await getDocs(query(collection(db, "enrollments"), where("user_id", "==", state.user.id)));
+                    for(let d of snap.docs) {
+                        const enr = d.data();
+                        const cSnap = await getDoc(doc(db, "courses", enr.course_id));
+                        if(cSnap.exists()) myCourses.push({ enrollment: enr, course: {id: cSnap.id, ...cSnap.data()} });
+                    }
+                } else {
+                    myCourses = [{ enrollment: {progress_percent: 50}, course: {id: '1', judul: 'Membuat Website AI', thumbnail_url: ''} }];
+                }
+
+                el.innerHTML = `
+                    <div class="mb-10 fade-in">
+                        <h2 class="text-3xl md:text-4xl font-black text-gray-800 tracking-tight mb-2">Ruang Belajar Anda</h2>
+                        <p class="text-gray-500 text-lg">Lanjutkan progress belajar Anda hari ini.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">
+                        ${myCourses.map(mc => `
+                            <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition duration-300 cursor-pointer group" onclick="studentRender.player('${mc.course.id}', '${mc.course.judul.replace(/'/g, "\\'")}')">
+                                <div class="relative h-48 overflow-hidden">
+                                    <img src="${getGDriveThumbnail(mc.course.thumbnail_url)}" ${imageFallback} class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-80"></div>
+                                    <div class="absolute bottom-5 left-5 right-5">
+                                        <div class="flex justify-between text-white text-xs font-bold mb-2">
+                                            <span class="uppercase tracking-wider">Progress Belajar</span>
+                                            <span class="text-green-400 font-black text-sm">${mc.enrollment.progress_percent || 0}%</span>
+                                        </div>
+                                        <div class="w-full bg-white/20 rounded-full h-2 backdrop-blur-sm"><div class="bg-green-400 h-2 rounded-full shadow-[0_0_10px_rgba(74,222,128,0.5)]" style="width: ${mc.enrollment.progress_percent || 0}%"></div></div>
                                     </div>
                                 </div>
+                                <div class="p-6">
+                                    <h4 class="font-extrabold text-xl text-gray-800 leading-snug">${mc.course.judul}</h4>
+                                    <button class="mt-6 w-full bg-indigo-50 text-indigo-700 py-3 rounded-xl font-bold hover:bg-indigo-600 hover:text-white transition flex justify-center items-center gap-2">Lanjutkan Materi <i class="fas fa-play"></i></button>
+                                </div>
                             </div>
-                            <div id="ctab-quiz" class="hidden fade-in">
-                                <div id="quiz-container" class="bg-slate-800 p-10 rounded-3xl border border-slate-700 shadow-md">
-                                    <h3 class="text-2xl font-extrabold text-white mb-8 border-b border-slate-700 pb-5">Evaluasi Pemahaman Materi</h3>
-                                    <div class="mb-8">
-                                        <p class="text-lg text-gray-200 font-bold mb-6">1. Apa tujuan utama dari penggunaan Artificial Intelligence dalam pengembangan website?</p>
-                                        <div class="space-y-4">
-                                            <label class="flex items-center p-5 border border-slate-600 rounded-xl cursor-pointer hover:bg-slate-700 transition-colors bg-slate-900/50"><input type="radio" name="q1" value="A" class="form-radio h-5 w-5 text-indigo-500 bg-slate-800 border-slate-600"><span class="ml-4 text-gray-300 font-medium">A. Memperlambat kinerja server web</span></label>
-                                            <label class="flex items-center p-5 border border-slate-600 rounded-xl cursor-pointer hover:bg-slate-700 transition-colors bg-slate-900/50"><input type="radio" name="q1" value="B" class="form-radio h-5 w-5 text-indigo-500 bg-slate-800 border-slate-600"><span class="ml-4 text-gray-300 font-medium">B. Mengotomatisasi tugas dan memberikan pengalaman personalisasi</span></label>
-                                            <label class="flex items-center p-5 border border-slate-600 rounded-xl cursor-pointer hover:bg-slate-700 transition-colors bg-slate-900/50"><input type="radio" name="q1" value="C" class="form-radio h-5 w-5 text-indigo-500 bg-slate-800 border-slate-600"><span class="ml-4 text-gray-300 font-medium">C. Menghapus semua kode HTML yang ada</span></label>
+                        `).join('')}
+                        ${myCourses.length === 0 ? '<div class="col-span-full text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-300"><i class="fas fa-folder-open text-6xl text-gray-200 mb-4 block"></i><p class="text-gray-500 font-bold text-lg">Belum ada kursus yang Anda ikuti saat ini.</p></div>' : ''}
+                    </div>
+                `;
+            },
+            player: async (courseId, courseTitle) => {
+                const el = document.getElementById('student-content');
+                el.innerHTML = '<div class="flex justify-center items-center h-64"><div class="loader mx-auto"></div></div>';
+                
+                let modules = [];
+                let enrollment = null;
+                let notesData = { content: '' };
+                
+                if(!IS_PREVIEW) {
+                    // Fetch Data Modul, Progress (Enrollment), dan Catatan sekaligus
+                    const [mSnap, eSnap, nSnap] = await Promise.all([
+                        getDocs(query(collection(db, "modules"), where("course_id", "==", courseId))),
+                        getDocs(query(collection(db, "enrollments"), where("user_id", "==", state.user.id), where("course_id", "==", courseId))),
+                        getDocs(query(collection(db, "notes"), where("user_id", "==", state.user.id), where("course_id", "==", courseId)))
+                    ]);
+                    
+                    modules = mSnap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.urutan - b.urutan);
+                    if(!eSnap.empty) {
+                        enrollment = { id: eSnap.docs[0].id, ...eSnap.docs[0].data() };
+                        if(!enrollment.completed_modules) enrollment.completed_modules = [];
+                    }
+                    if(!nSnap.empty) {
+                        notesData = { id: nSnap.docs[0].id, ...nSnap.docs[0].data() };
+                    }
+                } else {
+                    modules = [
+                        {id: 'm1', urutan: 1, judul_modul: 'Intro', tipe: 'video', konten_url: 'https://youtube.com/embed/dQw4w9WgXcQ'},
+                        {id: 'm2', urutan: 2, judul_modul: 'Slide PDF', tipe: 'gdrive_pdf', konten_url: 'https://drive.google.com/file/d/123/view'}
+                    ];
+                    enrollment = { id: 'e1', completed_modules: ['m1'] };
+                }
+
+                if(modules.length === 0) {
+                    return el.innerHTML = `
+                        <button onclick="studentRender.dashboard()" class="mb-6 text-indigo-600 font-bold bg-indigo-50 px-4 py-2 rounded-full hover:bg-indigo-100 transition inline-flex items-center gap-2"><i class="fas fa-arrow-left"></i> Kembali</button>
+                        <div class="text-center py-20 bg-white rounded-[2rem] border"><p class="font-bold text-gray-500">Materi belum tersedia untuk kursus ini.</p></div>
+                    `;
+                }
+
+                window.currentModules = modules;
+                window.currentEnrollment = enrollment;
+                window.currentCourseId = courseId;
+                
+                // Fungsi Helper untuk Navigasi Tab
+                window.switchTab = (tab) => {
+                    ['info', 'catatan', 'diskusi'].forEach(t => {
+                        document.getElementById(`tab-${t}`).classList.remove('border-indigo-600', 'text-indigo-600');
+                        document.getElementById(`tab-${t}`).classList.add('border-transparent', 'text-gray-500');
+                        document.getElementById(`content-${t}`).classList.add('hidden');
+                        document.getElementById(`content-${t}`).classList.remove('block');
+                    });
+                    document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
+                    document.getElementById(`tab-${tab}`).classList.add('border-indigo-600', 'text-indigo-600');
+                    document.getElementById(`content-${tab}`).classList.remove('hidden');
+                    document.getElementById(`content-${tab}`).classList.add('block');
+                    
+                    if(tab === 'diskusi') studentAction.loadDiskusi();
+                };
+
+                // Fungsi Helper untuk Merender Ulang List Modul (Memperbarui Ikon Centang Selesai)
+                window.renderModuleList = () => {
+                    const listHtml = window.currentModules.map((m, idx) => {
+                        const isCompleted = window.currentEnrollment?.completed_modules?.includes(m.id);
+                        const icon = isCompleted ? `<i class="fas fa-check text-white"></i>` : m.urutan;
+                        const iconBg = isCompleted ? `bg-green-500 shadow-green-200` : `bg-gray-100 text-gray-400 group-hover:bg-indigo-600 group-hover:text-white`;
+                        
+                        return `
+                            <button onclick="window.loadModule(${idx})" id="btn-mod-${idx}" class="text-left p-4 rounded-2xl border border-transparent hover:bg-gray-50 transition w-full flex items-center gap-4 group">
+                                <div id="icon-mod-${idx}" class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black transition shadow-sm ${iconBg}">${icon}</div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-extrabold text-gray-800 truncate mb-1">${m.judul_modul}</p>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">${m.tipe.replace('_', ' ')}</p>
+                                </div>
+                            </button>
+                        `;
+                    }).join('');
+                    const container = document.getElementById('module-list');
+                    if(container) container.innerHTML = listHtml;
+                    return listHtml; // Return nilai untuk render pertama kali di template
+                };
+                
+                el.innerHTML = `
+                    <div class="flex flex-col lg:flex-row gap-8 h-full pb-10 fade-in">
+                        <div class="w-full lg:w-3/4 flex flex-col gap-4">
+                            <button onclick="studentRender.dashboard()" class="self-start text-sm text-gray-500 hover:text-indigo-600 font-bold transition flex items-center gap-2 bg-white px-5 py-2.5 rounded-full shadow-sm border border-gray-100"><i class="fas fa-arrow-left"></i> Kembali ke Dashboard</button>
+                            
+                            <div class="bg-black rounded-3xl overflow-hidden aspect-video shadow-2xl border border-gray-900 flex items-center justify-center relative group" id="player-container">
+                                <!-- Player disuntikkan di sini -->
+                            </div>
+                            
+                            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 mt-2">
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                                    <div>
+                                        <span class="bg-indigo-50 text-indigo-600 text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block" id="player-type">VIDEO</span>
+                                        <h2 class="text-2xl md:text-3xl font-black text-gray-800 mb-2 leading-tight" id="player-title">Judul Materi</h2>
+                                        <p class="text-gray-500 font-semibold text-sm"><i class="fas fa-book text-indigo-400 mr-2"></i> ${courseTitle}</p>
+                                    </div>
+                                    <div id="action-complete">
+                                        <!-- Tombol Tandai Selesai disuntikkan di sini -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Tabs Bar -->
+                                <div class="flex border-b border-gray-100 mb-6 gap-2 md:gap-6 overflow-x-auto" style="scrollbar-width: none;">
+                                    <button onclick="switchTab('info')" id="tab-info" class="px-2 py-3 border-b-2 border-indigo-600 font-bold text-indigo-600 whitespace-nowrap text-sm"><i class="fas fa-info-circle mr-2"></i>Info Materi</button>
+                                    <button onclick="switchTab('catatan')" id="tab-catatan" class="px-2 py-3 border-b-2 border-transparent font-bold text-gray-500 hover:text-indigo-600 whitespace-nowrap text-sm transition"><i class="fas fa-edit mr-2"></i>Catatan Pribadi</button>
+                                    <button onclick="switchTab('diskusi')" id="tab-diskusi" class="px-2 py-3 border-b-2 border-transparent font-bold text-gray-500 hover:text-indigo-600 whitespace-nowrap text-sm transition"><i class="fas fa-comments mr-2"></i>Ruang Diskusi</button>
+                                </div>
+                                
+                                <!-- Tab Contents -->
+                                <div id="content-info" class="tab-pane block fade-in">
+                                    <p class="text-gray-600 text-sm leading-relaxed" id="player-desc">Silakan pelajari materi di atas dengan seksama. Jika sudah selesai, jangan lupa klik tombol <b>"Tandai Selesai"</b> di pojok kanan atas untuk memperbarui progress persentase belajar Anda pada kursus ini.</p>
+                                </div>
+                                
+                                <div id="content-catatan" class="tab-pane hidden fade-in">
+                                    <div class="bg-yellow-50/50 p-1 rounded-2xl border border-yellow-100">
+                                        <textarea id="note-text" rows="5" class="w-full p-4 bg-transparent outline-none text-gray-700 leading-relaxed resize-y" placeholder="Ketik catatan penting Anda untuk materi di kursus ini...">${notesData.content || ''}</textarea>
+                                    </div>
+                                    <div class="flex justify-end mt-3">
+                                        <button id="btn-save-note" onclick="studentAction.saveNote('${courseId}')" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"><i class="fas fa-save mr-2"></i>Simpan Catatan</button>
+                                    </div>
+                                </div>
+                                
+                                <div id="content-diskusi" class="tab-pane hidden fade-in">
+                                    <div class="flex gap-3 mb-6">
+                                        <div class="w-10 h-10 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-black text-sm shrink-0 uppercase">${state.user?.nama?.charAt(0) || 'U'}</div>
+                                        <div class="flex-1 flex gap-2">
+                                            <input type="text" id="diskusi-text" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold transition" placeholder="Tulis pertanyaan atau tanggapan Anda mengenai materi ini...">
+                                            <button id="btn-post-diskusi" onclick="studentAction.postDiskusi()" class="bg-indigo-600 text-white px-5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm"><i class="fas fa-paper-plane"></i></button>
                                         </div>
                                     </div>
-                                    <button onclick="submitQuiz()" class="bg-indigo-600 text-white px-8 py-4 rounded-xl font-extrabold hover:bg-indigo-500 w-full transition-all shadow-lg text-lg transform hover:-translate-y-1">Kirim Jawaban Kuis</button>
-                                    <div id="quiz-result" class="hidden mt-8 p-6 rounded-xl font-bold text-center text-lg border"></div>
+                                    <h4 class="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wider border-b border-gray-100 pb-2">Diskusi Materi Ini</h4>
+                                    <div id="diskusi-list" class="flex flex-col gap-4 max-h-[400px] overflow-y-auto pr-2">
+                                        <!-- List diskusi akan dimuat di sini secara asinkron -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="w-full lg:w-1/4">
+                            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-6 max-h-[calc(100vh-40px)] flex flex-col">
+                                <h3 class="font-extrabold text-gray-800 mb-6 flex items-center gap-3"><div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center"><i class="fas fa-list-ul"></i></div> Daftar Materi</h3>
+                                <div class="overflow-y-auto flex-1 pr-2 flex flex-col gap-2" id="module-list">
+                                    ${window.renderModuleList()}
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="w-full lg:w-1/4 bg-slate-900 border-l border-slate-800 flex flex-col h-72 lg:h-auto overflow-y-auto custom-scrollbar shadow-2xl z-20">
-                <div class="p-8 border-b border-slate-800 sticky top-0 bg-slate-900/95 backdrop-blur z-10 shadow-sm">
-                    <h3 id="class-course-title" class="font-extrabold text-xl text-white leading-tight mb-5 tracking-tight">Memuat Judul...</h3>
-                    <div class="w-full bg-slate-800 rounded-full h-3 mb-2 border border-slate-700 shadow-inner">
-                        <div id="class-progress-bar" class="bg-indigo-500 h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" style="width: 0%"></div>
-                    </div>
-                    <p id="class-progress-text" class="text-xs text-gray-400 mt-2 font-bold tracking-wider">Progress: 0%</p>
-                </div>
-                <div id="class-module-list" class="flex-1 p-6 space-y-3"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modern-alert" class="fixed top-5 right-5 z-[999999] transform transition-all duration-300 translate-x-[120%] opacity-0">
-        <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-gray-100 p-5 flex items-start max-w-sm">
-            <div id="alert-icon-box" class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center mr-4 shadow-inner"><i id="alert-icon" class="fas text-lg"></i></div>
-            <div><h4 id="alert-title" class="text-gray-900 font-extrabold text-base tracking-tight mb-1">Pesan</h4><p id="alert-message" class="text-gray-600 text-sm font-medium leading-relaxed"></p></div>
-            <button onclick="closeModernAlert()" class="ml-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
-        </div>
-    </div>
-
-    <div id="modal-confirm" class="fixed inset-0 bg-gray-900/60 hidden z-[999999] flex items-center justify-center backdrop-blur-sm px-4 fade-in">
-        <div class="bg-white rounded-3xl p-10 w-full max-w-sm text-center shadow-2xl border border-gray-100">
-            <div class="w-20 h-20 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-6 shadow-inner border-4 border-white outline outline-red-50"><i class="fas fa-exclamation-triangle text-4xl"></i></div>
-            <h3 class="text-2xl font-extrabold mb-3 text-gray-900 tracking-tight">Konfirmasi</h3>
-            <p class="text-gray-600 mb-10 leading-relaxed font-medium" id="modal-confirm-msg">Apakah Anda yakin?</p>
-            <div class="flex space-x-4">
-                <button onclick="closeConfirm()" class="flex-1 bg-gray-100 text-gray-700 rounded-2xl py-3.5 font-bold hover:bg-gray-200">Batal</button>
-                <button id="btn-confirm-yes" class="flex-1 bg-red-600 text-white rounded-2xl py-3.5 font-extrabold hover:bg-red-700 shadow-[0_10px_20px_rgba(220,38,38,0.2)]">Ya, Yakin</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-course" class="fixed inset-0 bg-gray-900/60 hidden z-[99999] flex items-center justify-center backdrop-blur-sm px-4 fade-in">
-        <div class="bg-white rounded-3xl p-10 w-full max-w-lg shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <h3 class="text-3xl font-extrabold mb-8 text-gray-900 tracking-tight flex items-center" id="modal-course-title-txt"><i class="fas fa-book text-indigo-500 bg-indigo-50 p-3 rounded-xl mr-4"></i> Form Kursus</h3>
-            <form onsubmit="submitCourse(event)">
-                <input type="hidden" id="mc-id">
-                <div class="space-y-6">
-                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Judul Kursus</label><input type="text" id="mc-title" required class="w-full border border-gray-200 bg-gray-50 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 font-medium"></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Deskripsi Lengkap</label><textarea id="mc-desc" required class="w-full border border-gray-200 bg-gray-50 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 font-medium h-32 resize-y"></textarea></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">URL Gambar Thumbnail (Link GDrive)</label><input type="text" id="mc-thumb" class="w-full border border-gray-200 bg-gray-50 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 font-medium"></div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Link Pendaftaran Eksternal (Opsional)</label>
-                        <input type="text" id="mc-reglink" placeholder="Contoh: https://lynk.id/..." class="w-full border border-gray-200 bg-gray-50 p-4 rounded-2xl focus:ring-4 focus:ring-emerald-500/20 font-medium">
-                        <p class="text-xs text-gray-500 mt-2 font-medium ml-1"><i class="fas fa-info-circle mr-1 text-emerald-400"></i>Isi dengan link checkout pendaftaran eksternal Anda. Kosongkan jika tidak ada.</p>
-                    </div>
-                </div>
-                <div class="mt-10 flex justify-end space-x-4 border-t border-gray-100 pt-6">
-                    <button type="button" onclick="closeModal('modal-course')" class="px-8 py-3.5 text-gray-700 bg-gray-100 font-bold rounded-2xl hover:bg-gray-200">Batal</button>
-                    <button type="submit" class="px-8 py-3.5 bg-indigo-600 text-white font-extrabold rounded-2xl shadow-[0_10px_20px_rgba(79,70,229,0.3)] hover:bg-indigo-700">Simpan Kursus</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-module" class="fixed inset-0 bg-gray-900/60 hidden z-[99999] flex items-center justify-center backdrop-blur-sm px-4 fade-in">
-        <div class="bg-white rounded-3xl p-10 w-full max-w-lg shadow-2xl border border-gray-100">
-            <h3 class="text-3xl font-extrabold mb-8 text-gray-900 tracking-tight flex items-center" id="modal-module-title-txt"><i class="fas fa-photo-video text-indigo-500 bg-indigo-50 p-3 rounded-xl mr-4"></i> Form Modul</h3>
-            <form onsubmit="submitModule(event)">
-                <input type="hidden" id="mm-id">
-                <div class="space-y-6">
-                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Judul Materi</label><input type="text" id="mm-title" required class="w-full border border-gray-200 bg-gray-50 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 font-medium"></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Format Media</label><select id="mm-type" class="w-full border border-gray-200 bg-gray-50 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 font-bold"><option value="video">Video (YouTube / GDrive)</option><option value="pdf">Dokumen PDF (Link GDrive)</option></select></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Tautan URL Konten</label><input type="text" id="mm-url" required class="w-full border border-gray-200 bg-gray-50 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 font-medium"><p class="text-xs text-gray-500 mt-2 font-medium ml-1"><i class="fas fa-lightbulb text-yellow-500 mr-1"></i> Paste link YouTube atau GDrive ("Siapa saja yang memiliki link").</p></div>
-                </div>
-                <div class="mt-10 flex justify-end space-x-4 border-t border-gray-100 pt-6">
-                    <button type="button" onclick="closeModal('modal-module')" class="px-8 py-3.5 text-gray-700 bg-gray-100 font-bold rounded-2xl hover:bg-gray-200">Batal</button>
-                    <button type="submit" class="px-8 py-3.5 bg-indigo-600 text-white font-extrabold rounded-2xl shadow-[0_10px_20px_rgba(79,70,229,0.3)] hover:bg-indigo-700">Simpan Modul</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-// KONFIGURASI APLIKASI
-const IS_PREVIEW = false; // UBAH KE FALSE JIKA DI-DEPLOY DI BLOGGER
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxzO9AunRhuaU5cF9zRthkmuW-QMoLlfyRerjXTM5TSJ6fnsAsVIV3BwLXE114rXONZ/exec"; 
-
-let currentUser = null;
-let currentActiveCourseId = null; 
-let tempAdminCourseId = null;
-let appConfigData = {}; 
-
-function formatImageUrl(url) {
-    if (!url || url.trim() === "") return "";
-    const driveMatch = url.match(/id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (driveMatch && driveMatch[1]) { return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`; }
-    return url; 
-}
-
-// DATA DUMMY UNTUK CANVAS PREVIEW
-const dummyDB = {
-    users: [
-        {id: 'U_1', name: 'System Administrator', email: 'admin', pass: 'yeswecan', role: 'admin', status: 'Aktif'},
-        {id: 'U_2', name: 'Agus Permana', email: 'user', pass: 'yeswecan', role: 'member', status: 'Aktif'}
-    ],
-    settings: { 
-        name: 'YESWECAN LMS', logo: '',
-        founderName: 'A. Permana, CITSA, CITAP, CAIM, MEP.', 
-        founderTitle: 'CEO & Lead Instructor', 
-        founderMsg: 'Assalamualaikum Wr. Wb.\nSelamat datang di Yeswecan Learning Center.\nSaya percaya setiap orang berhak mendapat akses ilmu yang bermutu dan mudah dijangkau.', 
-        founderPhoto: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500',
-        certSignType: '2',
-        certSign1Name: 'Agus Permana, M.Kom', certSign1Title: 'Instruktur Utama', certSign1Sig: '',
-        certSign2Name: 'Dr. Budi Santoso', certSign2Title: 'Direktur LMS', certSign2Sig: ''
-    },
-    courses: [{id: 'C_1', title: 'Mudah Membuat Website dengan AI', desc: 'Belajar membuat website dari nol menggunakan bantuan AI', thumb: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085', status: 'Ya', students: 5, regLink: 'https://lynk.id/yeswecan.shop/e26vpp5yoqo6'}],
-    modules: [{id: 'M_1', courseId: 'C_1', title: 'Pengantar AI', type: 'video', url: 'https://www.youtube.com/watch?v=S23P0K6FvN0', order: 1}, {id: 'M_2', courseId: 'C_1', title: 'Modul 1 (PDF)', type: 'pdf', url: 'https://drive.google.com/file/d/1B2g3H4i5J6k7L8m9N0/view', order: 2}],
-    enrollments: [{id: 'E_1', userId: 'U_2', courseId: 'C_1', progress: 45}]
-};
-
-// FUNGSI API (MOCK / LIVE)
-async function apiCall(action, payload = {}) {
-    if (IS_PREVIEW) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                try {
-                    if (action === 'login') {
-                        const u = dummyDB.users.find(x => x.email === payload.email && x.pass === payload.pass);
-                        if (u) resolve({id: u.id, name: u.name, role: u.role}); else throw new Error("Email atau password salah.");
+                `;
+                
+                window.loadModule = (idx) => {
+                    const m = window.currentModules[idx];
+                    window.currentModuleId = m.id; // Simpan ID Modul yang aktif untuk diskusi
+                    
+                    document.getElementById('player-title').innerText = m.judul_modul;
+                    document.getElementById('player-type').innerText = m.tipe.replace('_', ' ').toUpperCase();
+                    
+                    const container = document.getElementById('player-container');
+                    
+                    if (m.tipe === 'text') {
+                        container.className = "bg-white p-8 rounded-3xl overflow-y-auto h-[400px] shadow-sm border border-gray-100 text-gray-700 leading-relaxed";
+                        container.innerHTML = `<div class="prose max-w-none">${m.konten_url}</div>`;
+                    } else if (m.tipe === 'gdrive_video' || m.tipe === 'gdrive_pdf') {
+                        container.className = "bg-black rounded-3xl overflow-hidden aspect-video shadow-2xl border border-gray-900";
+                        container.innerHTML = `<iframe src="${getGDriveEmbed(m.konten_url)}" class="w-full h-full border-0" allow="autoplay; fullscreen"></iframe>`;
+                    } else {
+                        // YouTube
+                        container.className = "bg-black rounded-3xl overflow-hidden aspect-video shadow-2xl border border-gray-900";
+                        let src = m.konten_url;
+                        if(src.includes('watch?v=')) src = src.replace('watch?v=', 'embed/');
+                        container.innerHTML = `<iframe src="${src}" class="w-full h-full border-0" allowfullscreen></iframe>`;
                     }
-                    else if (action === 'getSettings') resolve(dummyDB.settings);
-                    else if (action === 'updateSettings') { dummyDB.settings = {...dummyDB.settings, ...payload}; resolve(dummyDB.settings); }
-                    else if (action === 'getAllCourses' || action === 'getPublicCourses') resolve(dummyDB.courses);
-                    else if (action === 'getUsers') resolve(dummyDB.users.filter(x => x.role === 'member'));
-                    else if (action === 'getUserCourses') resolve(dummyDB.courses.map(c => ({...c, progress: 100})));
-                    else if (action === 'getCourseModules') resolve(dummyDB.modules.filter(m => m.courseId === (payload.courseId || tempAdminCourseId)));
-                    else if (action === 'adminAddUser' || action === 'addEnrollment' || action === 'adminAddCourse' || action === 'adminEditCourse' || action === 'adminDeleteCourse' || action === 'adminAddModule' || action === 'adminEditModule' || action === 'adminDeleteModule' || action === 'adminDeleteEnrollment') resolve(true);
-                    else if (action === 'getEnrollments') {
-                        resolve(dummyDB.enrollments.map(e => {
-                            const u = dummyDB.users.find(x => x.id === e.userId) || {name: 'Unknown'}; const c = dummyDB.courses.find(x => x.id === e.courseId) || {title: 'Unknown'};
-                            return {id: e.id, userName: u.name, courseTitle: c.title};
-                        }));
-                    } else resolve([]);
-                } catch(e) { reject(e); }
-            }, 300);
-        });
-    } else {
-        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: action, payload: payload }) });
-        const res = await response.json();
-        if (res.status === 'success') return res.data; else throw new Error(res.message);
-    }
-}
-
-let alertTimeout;
-function showAlert(msg, title = "Sukses", type = "success") {
-    const alertBox = document.getElementById('modern-alert'); const iconBox = document.getElementById('alert-icon-box'); const iconEl = document.getElementById('alert-icon');
-    document.getElementById('alert-title').innerText = title; document.getElementById('alert-message').innerText = msg;
-    if (type === "error" || title === "Gagal") { iconBox.className = "w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center mr-4 shadow-inner bg-red-100 text-red-600"; iconEl.className = "fas fa-exclamation-circle text-xl"; } 
-    else { iconBox.className = "w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center mr-4 shadow-inner bg-emerald-100 text-emerald-600"; iconEl.className = "fas fa-check-circle text-xl"; }
-    alertBox.classList.remove('translate-x-[120%]', 'opacity-0'); clearTimeout(alertTimeout); alertTimeout = setTimeout(closeModernAlert, 4000);
-}
-function closeModernAlert() { document.getElementById('modern-alert').classList.add('translate-x-[120%]', 'opacity-0'); }
-let confirmCallback = null;
-function showConfirm(msg, callback) { document.getElementById('modal-confirm-msg').innerText = msg; confirmCallback = callback; document.getElementById('modal-confirm').classList.remove('hidden'); }
-function closeConfirm() { document.getElementById('modal-confirm').classList.add('hidden'); confirmCallback = null; }
-document.getElementById('btn-confirm-yes').addEventListener('click', () => { if(confirmCallback) confirmCallback(); closeConfirm(); });
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-function showPage(pageId) {
-    document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
-    document.getElementById('page-' + pageId).classList.remove('hidden');
-    document.getElementById('lms-app-container').scrollTo(0,0);
-    if(pageId === 'landing') loadPublicCourses();
-}
-
-async function applySettings() {
-    try {
-        appConfigData = await apiCall('getSettings');
-        document.getElementById('platformName').innerText = appConfigData.name || 'YESWECAN LMS'; 
-        document.title = appConfigData.name || 'YESWECAN LMS';
-        
-        const logoImg = document.getElementById('platformLogo');
-        if (appConfigData.logo && appConfigData.logo.trim() !== "") {
-            logoImg.src = formatImageUrl(appConfigData.logo); logoImg.classList.remove('hidden');
-        } else { 
-            logoImg.classList.add('hidden'); 
-        }
-
-        const fSec = document.getElementById('founder-section');
-        if (appConfigData.founderName && appConfigData.founderName.trim() !== "") {
-            document.getElementById('founder-name').innerText = appConfigData.founderName;
-            document.getElementById('founder-title').innerText = appConfigData.founderTitle || '';
-            document.getElementById('founder-message').innerHTML = (appConfigData.founderMsg || "").replace(/\n/g, '<br>');
-            if(appConfigData.founderPhoto) document.getElementById('founder-photo').src = formatImageUrl(appConfigData.founderPhoto);
-            fSec.classList.remove('hidden');
-        } else { fSec.classList.add('hidden'); }
-    } catch (e) { console.log("Gagal memuat pengaturan."); }
-}
-
-async function handleLogin(e) {
-    e.preventDefault(); const btn = document.getElementById('login-btn-submit'); 
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Memverifikasi...'; btn.disabled = true; 
-    try {
-        currentUser = await apiCall('login', {email: document.getElementById('email').value, pass: document.getElementById('password').value});
-        document.getElementById('nav-user-info').innerText = 'Hi, ' + currentUser.name; document.getElementById('nav-user-info').classList.remove('hidden');
-        document.getElementById('btn-login').classList.add('hidden'); document.getElementById('btn-logout').classList.remove('hidden');
-        if(currentUser.role === 'admin') { showPage('admin'); loadAdminData(); } else { showPage('member'); loadUserCourses(); }
-        document.getElementById('email').value = ''; document.getElementById('password').value = '';
-    } catch (error) { showAlert(error.message, "Gagal Login", "error"); } finally { btn.innerHTML = 'Masuk ke Dashboard'; btn.disabled = false; }
-}
-function logout() { currentUser = null; document.getElementById('nav-user-info').classList.add('hidden'); document.getElementById('btn-login').classList.remove('hidden'); document.getElementById('btn-logout').classList.add('hidden'); showPage('landing'); showAlert("Berhasil logout", "Sukses"); }
-
-function renderCourses(courses, containerId, isAdmin = false) {
-    const container = document.getElementById(containerId);
-    if (courses.length === 0) { container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-10 bg-white rounded-3xl border border-dashed border-gray-300 font-bold text-lg">Belum ada kursus yang tersedia.</p>'; return; }
-    let html = '';
-    courses.forEach(c => {
-        const finalThumbUrl = formatImageUrl(c.thumb);
-        html += `
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all transform hover:-translate-y-2 flex flex-col h-full group">
-            <div class="relative h-56 bg-gray-100 flex-shrink-0 overflow-hidden">
-                <img src="${finalThumbUrl}" alt="Thumbnail" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" onerror="this.onerror=null; this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Image+Error';">
-                <div class="absolute top-4 left-4 bg-indigo-600/90 backdrop-blur text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center">
-                    <i class="fas fa-users mr-1.5"></i> ${c.students || 0} Siswa Terdaftar
-                </div>
-            </div>
-            <div class="p-8 flex-grow flex flex-col bg-white">
-                <h3 class="font-extrabold text-2xl mb-3 text-gray-900 line-clamp-2 leading-tight tracking-tight">${c.title}</h3>
-                <p class="text-sm text-gray-500 mb-8 line-clamp-2 flex-grow leading-relaxed font-medium">${c.desc}</p>
-                <div class="mt-auto pt-4 border-t border-gray-50">
-                    ${isAdmin ? 
-                        `<div class="flex space-x-3 mb-3"><button onclick="openEditCourseModal('${c.id}', '${c.title.replace(/'/g, "\\'")}', '${c.desc.replace(/'/g, "\\'").replace(/\n/g, ' ')}', '${c.thumb}', '${c.regLink || ''}')" class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 py-3 rounded-xl text-sm font-extrabold transition-colors">Edit</button><button onclick="deleteCourse('${c.id}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-3 rounded-xl text-sm font-extrabold border border-red-100 transition-colors">Hapus</button></div>
-                        <button onclick="loadAdminModules('${c.id}')" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-3.5 rounded-xl text-sm font-extrabold transition-colors flex justify-center items-center"><i class="fas fa-list-ul mr-2"></i> Kelola Modul</button>` : 
-                        `<button onclick="openCourseDetail('${c.id}')" class="w-full bg-gray-100 hover:bg-indigo-600 hover:text-white text-gray-800 py-4 rounded-2xl text-sm font-extrabold transition-all">Lihat Detail</button>`
+                    
+                    // Render Tombol Status "Tandai Selesai"
+                    const isCompleted = window.currentEnrollment?.completed_modules?.includes(m.id);
+                    document.getElementById('action-complete').innerHTML = `
+                        <button id="btn-mark-complete" onclick="studentAction.toggleComplete(${idx})" class="px-5 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition shadow-sm ${isCompleted ? 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-200' : 'bg-gray-800 text-white hover:bg-gray-700'}">
+                            <i class="fas ${isCompleted ? 'fa-check-circle' : 'fa-check'}"></i> ${isCompleted ? 'Materi Selesai' : 'Tandai Selesai'}
+                        </button>
+                    `;
+                    
+                    // Highlight tombol list modul yang sedang aktif
+                    document.querySelectorAll('[id^="btn-mod-"]').forEach(b => {
+                        b.classList.remove('bg-indigo-50', 'border-indigo-100');
+                    });
+                    const activeBtn = document.getElementById(`btn-mod-${idx}`);
+                    if(activeBtn) {
+                        activeBtn.classList.add('bg-indigo-50', 'border-indigo-100');
                     }
-                </div>
-            </div>
-        </div>`;
-    }); container.innerHTML = html;
-}
-async function loadPublicCourses() { const c = await apiCall('getPublicCourses'); window.publicCoursesData = c; renderCourses(c, 'public-courses-container'); }
+                    
+                    // Muat ulang diskusi jika tab diskusi sedang dibuka (agar spesifik per modul)
+                    if(!document.getElementById('content-diskusi').classList.contains('hidden')){
+                        studentAction.loadDiskusi();
+                    }
+                };
 
-async function openCourseDetail(id) {
-    if(!window.publicCoursesData) return; const course = window.publicCoursesData.find(c => c.id === id); if(!course) return;
-    document.getElementById('detail-course-thumb').src = formatImageUrl(course.thumb);
-    document.getElementById('detail-course-title').innerText = course.title;
-    document.getElementById('detail-course-desc').innerText = course.desc;
-    document.getElementById('detail-course-students').innerHTML = `<i class="fas fa-users mr-2"></i> ${course.students || 0} Siswa Terdaftar`;
-    
-    const btnReg = document.getElementById('btn-register-external');
-    if(course.regLink && course.regLink.trim() !== "") { 
-        btnReg.href = course.regLink; 
-        btnReg.classList.remove('hidden'); 
-    } else { 
-        btnReg.classList.add('hidden'); 
-    }
+                window.loadModule(0);
+            }
+        };
 
-    showPage('course-detail');
-    try {
-        const modules = await apiCall('getCourseModules', { courseId: id }); let sylHtml = '';
-        if(modules.length > 0) {
-            modules.forEach((m, i) => { 
-                const icon = m.type === 'pdf' ? '<i class="fas fa-file-pdf text-red-500"></i>' : '<i class="fas fa-play-circle text-indigo-500"></i>';
-                sylHtml += `<div class="flex items-center p-5 bg-white rounded-2xl border border-gray-100 shadow-sm"><div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 font-extrabold mr-5 text-sm">${i+1}</div><h4 class="flex-grow text-base font-bold text-gray-800">${m.title}</h4>${icon}</div>`; 
+        // ==========================================
+        // 7. INITIALIZATION APP
+        // ==========================================
+        const initApp = async () => {
+            if(IS_PREVIEW) {
+                renderLanding();
+                return;
+            }
+
+            try {
+                const sSnap = await getDoc(doc(db, "settings", "platform_config"));
+                if(sSnap.exists()) state.settings = sSnap.data();
+                else await autoSetupDatabase();
+            } catch(e) { console.log("Init setting err", e); }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    state.user = { role: 'admin', email: user.email };
+                    renderAdminPanel();
+                } else {
+                    if(!state.user || state.user.role !== 'student') {
+                        renderLanding();
+                    }
+                }
             });
-        } else { sylHtml = '<p class="text-gray-500 text-sm p-4 text-center font-medium">Materi sedang disiapkan oleh Instruktur.</p>'; }
-        document.getElementById('detail-course-syllabus').innerHTML = sylHtml;
-    } catch(e) {}
-}
+        };
 
-async function loadUserCourses() { const c = await apiCall('getUserCourses', {userId: currentUser.id}); renderUserCourses(c); }
-function renderUserCourses(courses) {
-    const container = document.getElementById('member-courses-container');
-    if (courses.length === 0) { container.innerHTML = '<div class="col-span-full bg-white p-12 rounded-[2rem] shadow-xl text-center"><i class="fas fa-folder-open text-6xl text-gray-200 mb-6"></i><h3 class="text-2xl font-extrabold text-gray-800 mb-2">Belum Ada Kursus</h3><p class="text-gray-500 font-medium">Anda belum terdaftar di kelas manapun.</p></div>'; return; }
-    let html = '';
-    courses.forEach(c => {
-        html += `<div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 overflow-hidden cursor-pointer hover:shadow-2xl transition-all group transform hover:-translate-y-2" onclick="openClassroom('${c.id}', '${c.title.replace(/'/g, "\\'")}')">
-            <div class="h-52 relative overflow-hidden bg-gray-900"><img src="${formatImageUrl(c.thumb)}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500 group-hover:scale-105" onerror="this.onerror=null; this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Image+Error';"><div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div><div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-50 group-hover:scale-100"><div class="bg-indigo-600/90 backdrop-blur rounded-full w-20 h-20 flex items-center justify-center shadow-[0_0_30px_rgba(79,70,229,0.5)]"><i class="fas fa-play text-3xl text-white ml-2"></i></div></div></div>
-            <div class="p-8"><h3 class="font-extrabold text-xl mb-6 text-gray-900 line-clamp-2 tracking-tight">${c.title}</h3><div class="w-full bg-gray-100 rounded-full h-3.5 mb-3 overflow-hidden shadow-inner"><div class="bg-indigo-500 h-full rounded-full" style="width: ${c.progress}%"></div></div><div class="flex justify-between text-xs font-extrabold text-gray-500 uppercase tracking-widest"><span>Progress</span><span class="text-indigo-600">${c.progress}%</span></div></div></div>`;
-    }); container.innerHTML = html;
-}
+        // Mulai aplikasi
+        initApp();
 
-async function openClassroom(courseId, title) {
-    showPage('classroom'); document.getElementById('class-course-title').innerText = title;
-    document.getElementById('class-video-container').classList.add('hidden'); document.getElementById('class-video').src = '';
-    const modules = await apiCall('getCourseModules', {courseId: courseId});
-    let html = '';
-    modules.forEach((m, index) => {
-        const icon = m.type === 'video' ? 'fa-play-circle' : 'fa-file-pdf';
-        html += `<button onclick="loadModule('${m.title.replace(/'/g, "\\'")}', '${m.url}', '${m.type}')" class="w-full text-left p-5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-all flex items-center shadow-sm group"><div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-sm font-bold mr-4 text-slate-400 group-hover:text-indigo-400 group-hover:bg-indigo-900/30 transition-colors shadow-inner">${index + 1}</div><div class="flex-1"><h4 class="text-sm font-extrabold text-gray-300 group-hover:text-white transition-colors leading-snug">${m.title}</h4></div><i class="fas ${icon} text-slate-500 group-hover:text-indigo-400 transition-colors ml-3 text-lg"></i></button>`;
-    });
-    document.getElementById('class-module-list').innerHTML = html;
-    setTimeout(() => { document.getElementById('class-progress-bar').style.width = '100%'; }, 500);
-    document.getElementById('class-progress-text').innerText = 'Progress: 100%'; document.getElementById('btn-cert').classList.remove('hidden');
-}
-
-function loadModule(title, url, type) {
-    document.getElementById('class-module-title').innerText = title;
-    const vidCont = document.getElementById('class-video-container');
-    const iframe = document.getElementById('class-video');
-    const viewerLabel = document.getElementById('viewer-type-label');
-    const btnFullscreen = document.getElementById('btn-fullscreen-viewer');
-    
-    vidCont.classList.remove('hidden'); vidCont.style.display = 'block';
-    
-    if (type === 'pdf') { vidCont.classList.add('pdf-mode'); viewerLabel.innerText = "VIEWER DOKUMEN PDF"; btnFullscreen.classList.remove('hidden'); } 
-    else { vidCont.classList.remove('pdf-mode'); viewerLabel.innerText = "PEMUTAR VIDEO"; btnFullscreen.classList.remove('hidden'); }
-    
-    if (url && url.trim() !== '' && url !== 'undefined' && url !== 'null') {
-        let finalUrl = url;
-        const driveMatch = url.match(/id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        if (driveMatch && driveMatch[1]) { 
-            finalUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`; 
-        } 
-        else if (url.includes('youtube.com/') || url.includes('youtu.be/')) {
-            let ytId = '';
-            if(url.includes('watch?v=')) ytId = url.split('watch?v=')[1].split('&')[0]; else if(url.includes('youtu.be/')) ytId = url.split('youtu.be/')[1].split('?')[0];
-            if(ytId) finalUrl = `https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0&controls=1`;
-        }
-        iframe.removeAttribute('srcdoc'); iframe.src = finalUrl; 
-    } else { 
-        iframe.src = '';
-        iframe.srcdoc = `<div style="display:flex;justify-content:center;align-items:center;height:100%;background:#0f172a;color:#94a3b8;font-family:sans-serif;flex-direction:column;text-align:center;"><svg style="width:64px;height:64px;margin-bottom:20px;color:#334155;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg><h3 style="margin:0;font-size:24px;font-weight:bold;color:#cbd5e1;">Konten Tidak Ditemukan</h3><p style="margin-top:12px;font-size:16px;">URL/Link materi untuk modul ini kosong atau belum dimasukkan oleh Admin.</p></div>`;
-    }
-}
-
-function toggleFullscreenViewer() { 
-    const elem = document.getElementById('class-video-container'); 
-    if (elem.classList.contains('hidden')) return; 
-    if (!document.fullscreenElement) { 
-        if (elem.requestFullscreen) elem.requestFullscreen(); 
-    } else { 
-        if (document.exitFullscreen) document.exitFullscreen(); 
-    } 
-}
-
-function switchClassTab(tab) { ['catatan', 'forum', 'quiz'].forEach(t => { document.getElementById('ctab-' + t).classList.add('hidden'); document.getElementById('tab-btn-' + t).className = "border-transparent text-gray-500 hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tracking-wide"; }); document.getElementById('ctab-' + tab).classList.remove('hidden'); document.getElementById('tab-btn-' + tab).className = "border-indigo-500 text-indigo-400 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm tracking-wide"; }
-function saveNote() { const text = document.getElementById('personal-note').value; if(text.trim() === "") showAlert("Catatan tidak boleh kosong.", "Gagal", "error"); else showAlert("Catatan berhasil disimpan.", "Tersimpan"); }
-function postForum() { const text = document.getElementById('forum-input').value; if(text.trim() === "") return showAlert("Silakan tulis pertanyaan Anda.", "Peringatan", "error"); document.getElementById('forum-list').insertAdjacentHTML('afterbegin', `<div class="p-6 bg-slate-800 rounded-2xl border border-slate-700 shadow-sm mt-6 fade-in"><div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-emerald-500 flex justify-center items-center font-bold text-white mr-4 shadow-inner">ME</div><div><h5 class="text-base font-bold text-gray-100">${currentUser.name}</h5><p class="text-xs text-emerald-400 mt-0.5">Baru saja</p></div></div><p class="text-gray-300 text-base leading-relaxed">${text}</p></div>`); document.getElementById('forum-input').value = ""; showAlert("Pertanyaan dikirim.", "Terkirim"); }
-function submitQuiz() { const answer = document.querySelector('input[name="q1"]:checked'); const resDiv = document.getElementById('quiz-result'); if(!answer) return showAlert("Pilih jawaban dahulu.", "Peringatan", "error"); resDiv.classList.remove('hidden', 'bg-emerald-900/50', 'text-emerald-400', 'border-emerald-500/50', 'bg-red-900/50', 'text-red-400', 'border-red-500/50'); if(answer.value === 'B') { resDiv.classList.add('bg-emerald-900/50', 'text-emerald-400', 'border-emerald-500/50'); resDiv.innerHTML = "<i class='fas fa-check-circle mr-2'></i> Benar! AI bertujuan untuk mengotomatisasi tugas."; } else { resDiv.classList.add('bg-red-900/50', 'text-red-400', 'border-red-500/50'); resDiv.innerHTML = "<i class='fas fa-times-circle mr-2'></i> Salah. Silakan pelajari ulang."; } }
-
-function downloadCertificate() {
-    const btn = document.getElementById('btn-cert');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2 text-lg"></i> Memproses PDF...';
-    
-    let logoHtml = '';
-    if(appConfigData.logo && appConfigData.logo.trim() !== "") {
-        logoHtml = `<img src="${formatImageUrl(appConfigData.logo)}" style="max-height: 85px; margin: 0 auto 15px auto; display: block;" crossorigin="anonymous">`;
-    }
-
-    const n1 = (appConfigData.certSign1Name && appConfigData.certSign1Name.trim() !== '') ? appConfigData.certSign1Name : 'Nama Penandatangan 1';
-    const t1 = (appConfigData.certSign1Title && appConfigData.certSign1Title.trim() !== '') ? appConfigData.certSign1Title : 'Jabatan 1';
-    const s1Url = formatImageUrl(appConfigData.certSign1Sig);
-    let sig1Html = s1Url ? `<img src="${s1Url}" style="height: 70px; object-fit: contain; margin: 0 auto -15px auto; display: block;" crossorigin="anonymous">` : `<div style="height: 70px;"></div>`;
-
-    const n2 = (appConfigData.certSign2Name && appConfigData.certSign2Name.trim() !== '') ? appConfigData.certSign2Name : 'Nama Penandatangan 2';
-    const t2 = (appConfigData.certSign2Title && appConfigData.certSign2Title.trim() !== '') ? appConfigData.certSign2Title : 'Jabatan 2';
-    const s2Url = formatImageUrl(appConfigData.certSign2Sig);
-    let sig2Html = s2Url ? `<img src="${s2Url}" style="height: 70px; object-fit: contain; margin: 0 auto -15px auto; display: block;" crossorigin="anonymous">` : `<div style="height: 70px;"></div>`;
-
-    let signHtml = '';
-    // Menggunakan loose equality (==) untuk mengatasi perbedaan tipe data string/number dari Google Sheets
-    if(appConfigData.certSignType == '1') {
-        signHtml = `
-            <div style="display: flex; justify-content: center; width: 100%;">
-                <div style="text-align: center;">
-                    ${sig1Html}
-                    <div style="width: 220px; border-bottom: 2px solid #1e3a8a; margin: 0 auto 5px;"></div>
-                    <p style="font-size: 16px; font-weight: bold; color: #0f172a; margin:0;">${n1}</p>
-                    <p style="font-size: 14px; color: #64748b; margin:0;">${t1}</p>
-                </div>
-            </div>`;
-    } else {
-        signHtml = `
-            <div style="display: flex; justify-content: space-around; width: 100%;">
-                <div style="text-align: center;">
-                    ${sig1Html}
-                    <div style="width: 220px; border-bottom: 2px solid #1e3a8a; margin: 0 auto 5px;"></div>
-                    <p style="font-size: 16px; font-weight: bold; color: #0f172a; margin:0;">${n1}</p>
-                    <p style="font-size: 14px; color: #64748b; margin:0;">${t1}</p>
-                </div>
-                <div style="text-align: center;">
-                    ${sig2Html}
-                    <div style="width: 220px; border-bottom: 2px solid #1e3a8a; margin: 0 auto 5px;"></div>
-                    <p style="font-size: 16px; font-weight: bold; color: #0f172a; margin:0;">${n2}</p>
-                    <p style="font-size: 14px; color: #64748b; margin:0;">${t2}</p>
-                </div>
-            </div>`;
-    }
-
-    const certHtml = `
-        <div style="width: 900px; height: 630px; padding: 40px; background: #fff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; text-align: center; position: relative; box-sizing: border-box;">
-            <!-- Outer Border -->
-            <div style="position: absolute; top: 15px; left: 15px; right: 15px; bottom: 15px; border: 4px solid #1e3a8a;"></div>
-            <!-- Inner Border -->
-            <div style="position: absolute; top: 22px; left: 22px; right: 22px; bottom: 22px; border: 1px solid #d97706;"></div>
-            
-            <!-- Watermark / Background Decoration -->
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.03; font-size: 200px; color: #1e3a8a; z-index: 1;"><i class="fas fa-award"></i></div>
-
-            <div style="position: relative; z-index: 10; padding-top: 10px;">
-                ${logoHtml}
-                <h1 style="font-size: 46px; color: #1e3a8a; margin: 0 0 20px 0; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;">SERTIFIKAT</h1>
-                
-                <p style="font-size: 16px; color: #64748b; margin: 0 0 10px 0; font-style: italic;">Sertifikat ini diberikan dengan bangga kepada:</p>
-                
-                <h2 style="font-size: 42px; color: #d97706; margin: 0 0 15px 0; font-weight: bold; border-bottom: 1px dashed #cbd5e1; display: inline-block; padding: 0 40px 10px 40px;">${currentUser.name.toUpperCase()}</h2>
-                
-                <p style="font-size: 16px; color: #334155; margin: 15px 0 5px 0; line-height: 1.6; max-width: 700px; margin-left: auto; margin-right: auto;">Atas komitmen dan keberhasilannya dalam menyelesaikan seluruh rangkaian materi dan evaluasi pada program pembelajaran:</p>
-                
-                <h3 style="font-size: 28px; color: #0f172a; margin: 5px 0 0 0; font-weight: bold;">${document.getElementById('class-course-title').innerText}</h3>
-                
-                <div style="position: absolute; top: 440px; width: 100%; left: 0;">
-                    ${signHtml}
-                </div>
-            </div>
-        </div>
-    `;
-
-    // html2pdf options. Increase scale for better resolution.
-    const opt = { 
-        margin: 0, 
-        filename: 'Sertifikat.pdf', 
-        image: { type: 'jpeg', quality: 0.98 }, 
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true }, 
-        jsPDF: { unit: 'px', format: [900, 630], orientation: 'landscape' } 
-    };
-    
-    html2pdf().set(opt).from(certHtml).save().then(() => {
-        btn.innerHTML = '<i class="fas fa-award mr-2 text-lg"></i> Unduh Sertifikat';
-        showAlert("Sertifikat berhasil diunduh.", "Sukses");
-    });
-}
-
-function switchAdminTab(tab) {
-    document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden')); 
-    document.getElementById('tab-' + tab).classList.remove('hidden');
-    
-    // Reset active button states
-    ['users', 'courses', 'enrollments', 'settings'].forEach(t => {
-        const btn = document.getElementById('btn-tab-' + t);
-        if(btn) {
-            btn.className = "w-full text-left px-5 py-4 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all flex items-center font-bold hover:shadow-md";
-        }
-    });
-    // Set active state
-    const activeBtn = document.getElementById('btn-tab-' + (tab==='modules' ? 'courses' : tab));
-    if(activeBtn) {
-        activeBtn.className = "w-full text-left px-5 py-4 rounded-2xl bg-indigo-600 text-white transition-all flex items-center font-bold shadow-lg transform hover:scale-105";
-    }
-
-    if(tab === 'users') loadAdminUsers(); if(tab === 'courses') loadAdminCourses(); if(tab === 'settings') loadSettingsForm(); if(tab === 'enrollments') loadAdminEnrollments();
-}
-async function loadAdminData() { switchAdminTab('users'); }
-
-async function loadAdminUsers() {
-    const users = await apiCall('getUsers'); let h = '';
-    users.forEach(u => { h += `<tr class="border-b border-gray-50 hover:bg-gray-50"><td class="p-6 font-extrabold text-gray-900">${u.name}</td><td class="p-6 text-gray-600 font-medium">${u.email}</td><td class="p-6"><span class="bg-indigo-100 text-indigo-700 font-extrabold text-xs px-3 py-1.5 rounded-md">Member</span></td></tr>`; });
-    document.getElementById('admin-user-list').innerHTML = h || '<tr><td colspan="3" class="p-8 text-center text-gray-500 font-bold">Belum ada siswa terdaftar.</td></tr>';
-}
-async function adminAddUser(e) { 
-    e.preventDefault(); 
-    try { 
-        await apiCall('adminAddUser', {name: document.getElementById('new-user-name').value, email: document.getElementById('new-user-email').value}); 
-        document.getElementById('new-user-name').value = ''; 
-        document.getElementById('new-user-email').value = ''; 
-        showAlert("Siswa didaftarkan!", "Sukses"); 
-        loadAdminUsers(); 
-    } catch(err) { showAlert(err.message, "Gagal", "error"); } 
-}
-
-async function loadAdminCourses() { const c = await apiCall('getAllCourses'); renderCourses(c, 'admin-courses-container', true); }
-function openCourseModal() { document.getElementById('mc-id').value = ''; document.getElementById('mc-title').value = ''; document.getElementById('mc-desc').value = ''; document.getElementById('mc-thumb').value = ''; document.getElementById('mc-reglink').value = ''; document.getElementById('modal-course-title-txt').innerHTML = '<i class="fas fa-plus-circle text-indigo-500 bg-indigo-50 p-3 rounded-xl mr-4"></i> Tambah Kursus'; document.getElementById('modal-course').classList.remove('hidden'); }
-function openEditCourseModal(id, title, desc, thumb, regLink) { document.getElementById('mc-id').value = id; document.getElementById('mc-title').value = title; document.getElementById('mc-desc').value = desc; document.getElementById('mc-thumb').value = thumb; document.getElementById('mc-reglink').value = regLink || ''; document.getElementById('modal-course-title-txt').innerHTML = '<i class="fas fa-edit text-indigo-500 bg-indigo-50 p-3 rounded-xl mr-4"></i> Edit Kursus'; document.getElementById('modal-course').classList.remove('hidden'); }
-async function submitCourse(e) { e.preventDefault(); const id = document.getElementById('mc-id').value; await apiCall(id ? 'adminEditCourse' : 'adminAddCourse', {id, title: document.getElementById('mc-title').value, desc: document.getElementById('mc-desc').value, thumb: document.getElementById('mc-thumb').value, regLink: document.getElementById('mc-reglink').value}); closeModal('modal-course'); loadAdminCourses(); showAlert("Kursus tersimpan.", "Sukses"); }
-function deleteCourse(id) { showConfirm("Menghapus kursus akan menghilangkan semua modul didalamnya. Yakin?", async () => { await apiCall('adminDeleteCourse', {id}); loadAdminCourses(); showAlert("Kursus dihapus.", "Terhapus"); }); }
-
-async function loadAdminModules(courseId) {
-    tempAdminCourseId = courseId; switchAdminTab('modules'); 
-    const modules = await apiCall('getCourseModules', { courseId: courseId }); 
-    let h = '';
-    modules.forEach(m => { 
-        h += `<tr class="border-b border-gray-50 hover:bg-gray-50"><td class="p-6 font-extrabold text-gray-900">${m.title}</td><td class="p-6 font-extrabold text-xs uppercase tracking-wider text-indigo-600 bg-indigo-50/50">${m.type}</td><td class="p-6 text-sm max-w-xs truncate text-blue-500 font-medium">${m.url}</td><td class="p-6 text-right whitespace-nowrap"><button onclick="openEditModuleModal('${m.id}', '${m.title.replace(/'/g, "\\'")}', '${m.type}', '${m.url.replace(/'/g, "\\'")}')" class="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg font-bold hover:bg-indigo-100 mr-2 shadow-sm transition-colors">Edit</button><button onclick="deleteModule('${m.id}')" class="text-red-600 bg-red-50 px-4 py-2 rounded-lg font-bold hover:bg-red-100 shadow-sm transition-colors">Hapus</button></td></tr>`; 
-    });
-    document.getElementById('admin-module-list').innerHTML = h || '<tr><td colspan="4" class="p-10 text-center text-gray-500 font-bold">Belum ada modul di kursus ini.</td></tr>';
-}
-function openModuleModal() { document.getElementById('mm-id').value = ''; document.getElementById('mm-title').value = ''; document.getElementById('mm-type').value = 'video'; document.getElementById('mm-url').value = ''; document.getElementById('modal-module-title-txt').innerHTML = '<i class="fas fa-plus-circle text-indigo-500 bg-indigo-50 p-3 rounded-xl mr-4"></i> Tambah Modul'; document.getElementById('modal-module').classList.remove('hidden'); }
-function openEditModuleModal(id, title, type, url) { document.getElementById('mm-id').value = id; document.getElementById('mm-title').value = title; document.getElementById('mm-type').value = type; document.getElementById('mm-url').value = url; document.getElementById('modal-module-title-txt').innerHTML = '<i class="fas fa-edit text-indigo-500 bg-indigo-50 p-3 rounded-xl mr-4"></i> Edit Modul'; document.getElementById('modal-module').classList.remove('hidden'); }
-async function submitModule(e) { e.preventDefault(); const id = document.getElementById('mm-id').value; if (id) { await apiCall('adminEditModule', {id, title: document.getElementById('mm-title').value, type: document.getElementById('mm-type').value, url: document.getElementById('mm-url').value}); showAlert("Perubahan modul disimpan.", "Sukses"); } else { await apiCall('adminAddModule', {courseId: tempAdminCourseId, title: document.getElementById('mm-title').value, type: document.getElementById('mm-type').value, url: document.getElementById('mm-url').value}); showAlert("Modul baru ditambahkan.", "Sukses"); } closeModal('modal-module'); loadAdminModules(tempAdminCourseId); }
-function deleteModule(id) { showConfirm("Hapus modul materi ini?", async () => { await apiCall('adminDeleteModule', {id}); loadAdminModules(tempAdminCourseId); showAlert("Modul dihapus.", "Terhapus"); }); }
-
-async function loadAdminEnrollments() {
-    try {
-        let uOpts = '<option value="">-- Pilih Siswa --</option>'; (await apiCall('getUsers')).forEach(u => uOpts += `<option value="${u.id}">${u.name} (${u.email})</option>`); document.getElementById('enroll-user-select').innerHTML = uOpts;
-        let cOpts = '<option value="">-- Pilih Kursus --</option>'; (await apiCall('getAllCourses')).forEach(c => cOpts += `<option value="${c.id}">${c.title}</option>`); document.getElementById('enroll-course-select').innerHTML = cOpts;
-        const enrolls = await apiCall('getEnrollments'); let h = '';
-        enrolls.forEach(e => { h += `<tr class="border-b border-gray-50 hover:bg-gray-50"><td class="p-6 font-extrabold text-gray-900">${e.userName}</td><td class="p-6 font-medium text-gray-700">${e.courseTitle}</td><td class="p-6 text-right"><button onclick="deleteEnrollment('${e.id}')" class="text-red-600 bg-red-50 px-4 py-2 rounded-lg font-bold hover:bg-red-100">Cabut Akses</button></td></tr>`; });
-        document.getElementById('admin-enroll-list').innerHTML = h || '<tr><td colspan="3" class="p-10 text-center text-gray-500 font-bold">Belum ada akses yang diberikan.</td></tr>';
-    } catch(err) {}
-}
-async function adminAddEnrollment(e) { e.preventDefault(); const userId = document.getElementById('enroll-user-select').value; const courseId = document.getElementById('enroll-course-select').value; if(!userId || !courseId) return showAlert("Pilih Siswa dan Kursus!", "Gagal", "error"); try { await apiCall('addEnrollment', {userId, courseId}); showAlert("Akses kursus diberikan!", "Sukses"); loadAdminEnrollments(); } catch(err) { showAlert(err.message, "Gagal", "error"); } }
-function deleteEnrollment(id) { showConfirm("Cabut akses siswa pada kursus ini?", async () => { await apiCall('adminDeleteEnrollment', {id}); loadAdminEnrollments(); showAlert("Akses dicabut.", "Terhapus"); }); }
-
-function toggleCertSigners() {
-    const val = document.getElementById('set-cert-type').value;
-    if(val === '1') document.getElementById('cert-signer-2-box').classList.add('hidden');
-    else document.getElementById('cert-signer-2-box').classList.remove('hidden');
-}
-
-async function loadSettingsForm() {
-    const c = appConfigData;
-    document.getElementById('set-plat-name').value = c.name || ''; document.getElementById('set-plat-logo').value = c.logo || '';
-    document.getElementById('set-founder-name').value = c.founderName || ''; document.getElementById('set-founder-title').value = c.founderTitle || '';
-    document.getElementById('set-founder-photo').value = c.founderPhoto || ''; document.getElementById('set-founder-msg').value = c.founderMsg || '';
-    
-    document.getElementById('set-cert-type').value = c.certSignType || '2';
-    document.getElementById('set-cert-s1-name').value = c.certSign1Name || ''; 
-    document.getElementById('set-cert-s1-title').value = c.certSign1Title || '';
-    document.getElementById('set-cert-s1-sig').value = c.certSign1Sig || ''; 
-    
-    document.getElementById('set-cert-s2-name').value = c.certSign2Name || ''; 
-    document.getElementById('set-cert-s2-title').value = c.certSign2Title || '';
-    document.getElementById('set-cert-s2-sig').value = c.certSign2Sig || '';
-    
-    toggleCertSigners();
-}
-async function saveSettings(e) {
-    e.preventDefault();
-    await apiCall('updateSettings', {
-        name: document.getElementById('set-plat-name').value, logo: document.getElementById('set-plat-logo').value,
-        founderName: document.getElementById('set-founder-name').value, founderTitle: document.getElementById('set-founder-title').value,
-        founderMsg: document.getElementById('set-founder-msg').value, founderPhoto: document.getElementById('set-founder-photo').value,
-        certSignType: document.getElementById('set-cert-type').value,
-        certSign1Name: document.getElementById('set-cert-s1-name').value, certSign1Title: document.getElementById('set-cert-s1-title').value, certSign1Sig: document.getElementById('set-cert-s1-sig').value,
-        certSign2Name: document.getElementById('set-cert-s2-name').value, certSign2Title: document.getElementById('set-cert-s2-title').value, certSign2Sig: document.getElementById('set-cert-s2-sig').value
-    });
-    showAlert("Pengaturan platform tersimpan!", "Sukses"); applySettings();
-}
-
-window.onload = function() { applySettings(); showPage('landing'); };
-</script>
+    </script>
 </body>
 </html>
