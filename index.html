@@ -427,6 +427,11 @@
                             <button onclick="adminRender.akses()" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-4 font-semibold text-sm" data-target="akses"><i class="fas fa-key w-5 text-center"></i> Akses Kursus</button>
                             <button onclick="adminRender.pengaturan()" class="nav-btn w-full text-left px-4 py-3 rounded-xl hover:bg-white/10 transition flex items-center gap-4 font-semibold text-sm" data-target="pengaturan"><i class="fas fa-cog w-5 text-center"></i> Pengaturan</button>
                         </nav>
+                        <div class="p-6 border-t border-gray-700/50 mt-auto">
+                            <button onclick="logout()" class="w-full py-3 px-4 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white font-bold transition flex items-center justify-center gap-3">
+                                <i class="fas fa-sign-out-alt"></i> Keluar
+                            </button>
+                        </div>
                     </aside>
                     
                     <main class="admin-main flex-1 h-full overflow-y-auto bg-gray-50">
@@ -437,7 +442,7 @@
                                     <span class="text-sm font-bold text-gray-700">Administrator</span>
                                     <i class="fas fa-user-circle text-indigo-600 text-xl"></i>
                                 </div>
-                                <button onclick="logout()" class="text-red-500 hover:text-red-700 bg-red-50 md:bg-transparent md:hover:bg-red-50 px-4 py-2 rounded-full font-bold text-sm transition flex items-center gap-2 md:hidden">
+                                <button onclick="logout()" class="text-red-500 hover:text-red-700 bg-red-50 px-4 py-2 rounded-full font-bold text-sm transition flex items-center gap-2">
                                     <i class="fas fa-sign-out-alt"></i> Keluar
                                 </button>
                             </div>
